@@ -504,11 +504,110 @@
       height: 10px;
       border-radius: 50%;
     }
+
+    .hero-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      opacity: 0.55;
+    }
+
+    .canvas-section { padding: 2.5rem 0; }
+
+    .canvas-wrap {
+      position: relative;
+      background: linear-gradient(160deg, #0a0e16 0%, #121826 45%, #0d1525 100%);
+      border: 1px solid var(--border);
+      border-radius: calc(var(--radius) + 4px);
+      overflow: hidden;
+      box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,0.04);
+      aspect-ratio: 16 / 9;
+      min-height: 380px;
+      max-height: 620px;
+    }
+
+    .canvas-wrap canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+    }
+
+    .canvas-tooltip {
+      position: absolute;
+      pointer-events: none;
+      padding: 0.65rem 0.9rem;
+      background: rgba(12, 15, 20, 0.92);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 0.8rem;
+      line-height: 1.45;
+      max-width: 240px;
+      opacity: 0;
+      transform: translate(-50%, -110%) scale(0.96);
+      transition: opacity 0.2s, transform 0.2s;
+      z-index: 10;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    }
+
+    .canvas-tooltip.visible {
+      opacity: 1;
+      transform: translate(-50%, -110%) scale(1);
+    }
+
+    .canvas-tooltip strong {
+      display: block;
+      font-size: 0.9rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .canvas-hud {
+      position: absolute;
+      bottom: 1rem;
+      left: 1rem;
+      right: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 1rem;
+      pointer-events: none;
+      flex-wrap: wrap;
+    }
+
+    .canvas-hud-pill {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.4rem 0.75rem;
+      border-radius: 999px;
+      background: rgba(20, 25, 34, 0.85);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(8px);
+    }
+
+    .canvas-hud-pill.isp { color: var(--isp-light); border-color: rgba(0,168,114,0.35); }
+    .canvas-hud-pill.bpm { color: var(--bpm-light); border-color: rgba(66,165,245,0.35); }
+    .canvas-hud-pill.mps { color: var(--mps-light); border-color: rgba(239,83,80,0.35); }
+
+    .canvas-legend-row {
+      display: flex;
+      justify-content: center;
+      gap: 1.75rem;
+      margin-top: 1.25rem;
+      flex-wrap: wrap;
+    }
+
+    .canvas-legend-row .legend-item { font-size: 0.85rem; }
   </style>
 </head>
 <body>
 
 <header class="hero">
+  <canvas id="heroCanvas" class="hero-canvas" aria-hidden="true"></canvas>
   <div class="container">
     <h1>MPS sotto assedio: Intesa vs Banco BPM</h1>
     <p>Confronto interattivo delle due operazioni in competizione su Monte dei Paschi — corrispettivi, sinergie, ruolo Generali e impatto per azionisti MPS, ISP e BPM. Dati aggiornati a luglio 2026.</p>
@@ -540,6 +639,28 @@
         Fusione Banco BPM
         <small>Proposta merger of equals del 7 giu 2026</small>
       </button>
+    </div>
+  </section>
+
+  <!-- Canvas deal map -->
+  <section class="canvas-section">
+    <h2 class="section-title">Mappa delle operazioni</h2>
+    <p class="section-sub">Rete interattiva — dimensione = capitalizzazione · particelle = flussi deal · sincronizzata con lo scenario selezionato</p>
+
+    <div class="canvas-wrap" id="dealCanvasWrap">
+      <canvas id="dealCanvas"></canvas>
+      <div class="canvas-tooltip" id="canvasTooltip"></div>
+      <div class="canvas-hud">
+        <span class="canvas-hud-pill mps" id="hudMps">MPS €33,5 mld</span>
+        <span class="canvas-hud-pill isp" id="hudIsp">OPAS → €11,14/az</span>
+        <span class="canvas-hud-pill bpm" id="hudBpm">Fusione → €11,72/az</span>
+      </div>
+    </div>
+
+    <div class="canvas-legend-row">
+      <div class="legend-item"><span class="legend-dot" style="background:var(--isp-light)"></span> Flusso OPAS Intesa</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--bpm-light)"></span> Flusso fusione BPM</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--generali)"></span> Generali via Mediobanca</div>
     </div>
   </section>
 
@@ -852,6 +973,423 @@ const SCORE_LABELS = ['Corrispettivo', 'Upside industriale', 'Preservazione iden
 let currentScenario = 'both';
 let currentShareholder = 'mps';
 
+/* ── Canvas: hero ambient + deal network ── */
+const CAPS = { isp: 111, mps: 33.5, bpm: 23.3, generali: 53.5 };
+const DEAL_VALUES = { isp: 1.6 * PRICES.isp + 1, bpm: 0.76 * PRICES.bpm };
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+function setupCanvas(canvas, wrap) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const rect = wrap.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { ctx, w: rect.width, h: rect.height, dpr };
+}
+
+class FlowParticle {
+  constructor(from, to, color, speed = 0.004) {
+    this.from = from;
+    this.to = to;
+    this.color = color;
+    this.t = Math.random();
+    this.speed = speed + Math.random() * 0.003;
+    this.size = 1.5 + Math.random() * 2;
+    this.trail = 0.35 + Math.random() * 0.25;
+  }
+  update() {
+    this.t += this.speed;
+    if (this.t > 1) this.t -= 1;
+  }
+  draw(ctx) {
+    const x = lerp(this.from.x, this.to.x, this.t);
+    const y = lerp(this.from.y, this.to.y, this.t);
+    const px = lerp(this.from.x, this.to.x, Math.max(0, this.t - this.trail));
+    const py = lerp(this.from.y, this.to.y, Math.max(0, this.t - this.trail));
+    const g = ctx.createLinearGradient(px, py, x, y);
+    g.addColorStop(0, 'transparent');
+    g.addColorStop(1, this.color);
+    ctx.beginPath();
+    ctx.moveTo(px, py);
+    ctx.lineTo(x, y);
+    ctx.strokeStyle = g;
+    ctx.lineWidth = this.size;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x, y, this.size + 1, 0, Math.PI * 2);
+    ctx.fillStyle = this.color;
+    ctx.shadowColor = this.color;
+    ctx.shadowBlur = 12;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+}
+
+const dealViz = (() => {
+  const canvas = document.getElementById('dealCanvas');
+  const wrap = document.getElementById('dealCanvasWrap');
+  const tooltip = document.getElementById('canvasTooltip');
+  if (!canvas || !wrap) return null;
+
+  let ctx, w, h, nodes = [], particles = [], bgStars = [], mouse = { x: -1, y: -1 };
+  let hovered = null, time = 0, rafId = null;
+
+  const nodeDefs = [
+    { id: 'isp', label: 'Intesa Sanpaolo', cap: CAPS.isp, color: '#00a872', glow: 'rgba(0,168,114,0.45)', role: 'OPAS vincolante · €30,6 mld' },
+    { id: 'mps', label: 'Monte dei Paschi', cap: CAPS.mps, color: '#ef5350', glow: 'rgba(239,83,80,0.5)', role: 'Target · €11,41/az mercato' },
+    { id: 'bpm', label: 'Banco BPM', cap: CAPS.bpm, color: '#42a5f5', glow: 'rgba(66,165,245,0.45)', role: 'Merger of equals · concambio 0,75–0,77' },
+    { id: 'generali', label: 'Generali', cap: CAPS.generali, color: '#e53935', glow: 'rgba(229,57,53,0.35)', role: '~13% via Mediobanca · asset strategico' },
+    { id: 'ca', label: 'Crédit Agricole', cap: 8, color: '#7cb342', glow: 'rgba(124,179,66,0.3)', role: '29,3% BPM · assenso critico' },
+  ];
+
+  function capRadius(cap) {
+    return 28 + Math.sqrt(cap) * 5.5;
+  }
+
+  function layoutNodes() {
+    const cx = w * 0.5, cy = h * 0.48;
+    const positions = {
+      isp: { x: w * 0.22, y: h * 0.28 },
+      mps: { x: cx, y: cy },
+      bpm: { x: w * 0.78, y: h * 0.28 },
+      generali: { x: cx, y: h * 0.82 },
+      ca: { x: w * 0.88, y: h * 0.58 },
+    };
+    nodes = nodeDefs.map(def => ({
+      ...def,
+      x: positions[def.id].x,
+      y: positions[def.id].y,
+      baseX: positions[def.id].x,
+      baseY: positions[def.id].y,
+      r: capRadius(def.cap),
+      pulse: Math.random() * Math.PI * 2,
+    }));
+  }
+
+  function rebuildParticles() {
+    particles = [];
+    const mps = nodes.find(n => n.id === 'mps');
+    const isp = nodes.find(n => n.id === 'isp');
+    const bpm = nodes.find(n => n.id === 'bpm');
+    if (!mps || !isp || !bpm) return;
+    for (let i = 0; i < 28; i++) particles.push(new FlowParticle(isp, mps, 'rgba(0,168,114,0.95)', 0.003));
+    for (let i = 0; i < 22; i++) particles.push(new FlowParticle(bpm, mps, 'rgba(66,165,245,0.95)', 0.0035));
+  }
+
+  function initStars() {
+    bgStars = Array.from({ length: 80 }, () => ({
+      x: Math.random(), y: Math.random(),
+      r: 0.4 + Math.random() * 1.2,
+      a: 0.15 + Math.random() * 0.35,
+      sp: 0.2 + Math.random() * 0.5,
+    }));
+  }
+
+  function drawBackground() {
+    const g = ctx.createRadialGradient(w * 0.5, h * 0.45, 0, w * 0.5, h * 0.45, Math.max(w, h) * 0.65);
+    g.addColorStop(0, 'rgba(21,101,192,0.08)');
+    g.addColorStop(0.45, 'rgba(0,133,90,0.05)');
+    g.addColorStop(1, 'transparent');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+
+    bgStars.forEach(s => {
+      const twinkle = s.a + Math.sin(time * s.sp + s.x * 10) * 0.08;
+      ctx.beginPath();
+      ctx.arc(s.x * w, s.y * h, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(232,236,244,${twinkle})`;
+      ctx.fill();
+    });
+  }
+
+  function hexAlpha(hex, alpha) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+
+  function drawArc(from, to, color, alpha, width, dash = false) {
+    const mx = (from.x + to.x) / 2;
+    const my = (from.y + to.y) / 2 - 40;
+    ctx.beginPath();
+    ctx.moveTo(from.x, from.y);
+    ctx.quadraticCurveTo(mx, my, to.x, to.y);
+    ctx.strokeStyle = hexAlpha(color, alpha);
+    ctx.lineWidth = width;
+    ctx.setLineDash(dash ? [6, 10] : []);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  function scenarioAlpha(deal) {
+    if (currentScenario === 'both') return 1;
+    return currentScenario === deal ? 1 : 0.12;
+  }
+
+  function drawConnections() {
+    const mps = nodes.find(n => n.id === 'mps');
+    const isp = nodes.find(n => n.id === 'isp');
+    const bpm = nodes.find(n => n.id === 'bpm');
+    const gen = nodes.find(n => n.id === 'generali');
+    const ca = nodes.find(n => n.id === 'ca');
+
+    const ispA = scenarioAlpha('isp');
+    const bpmA = scenarioAlpha('bpm');
+
+    if (isp && mps) {
+      drawArc(isp, mps, '#00a872', 0.15 * ispA, 3);
+      drawArc(isp, mps, '#00a872', 0.55 * ispA, 1.5);
+    }
+    if (bpm && mps) {
+      drawArc(bpm, mps, '#42a5f5', 0.15 * bpmA, 3);
+      drawArc(bpm, mps, '#42a5f5', 0.55 * bpmA, 1.5);
+    }
+    if (gen && mps) {
+      drawArc(gen, mps, '#e53935', 0.12, 2, true);
+      drawArc(gen, mps, '#e53935', 0.35, 1, true);
+    }
+    if (ca && bpm) {
+      drawArc(ca, bpm, '#7cb342', 0.1, 1.5, true);
+    }
+
+    particles.forEach(p => {
+      const isIsp = p.color.includes('168,114');
+      const alpha = isIsp ? ispA : bpmA;
+      if (alpha < 0.15) return;
+      ctx.globalAlpha = alpha;
+      p.update();
+      p.draw(ctx);
+      ctx.globalAlpha = 1;
+    });
+  }
+
+  function drawNode(n) {
+    const isHovered = hovered === n.id;
+    const dealHighlight =
+      (n.id === 'isp' && scenarioAlpha('isp') > 0.5) ||
+      (n.id === 'bpm' && scenarioAlpha('bpm') > 0.5) ||
+      (n.id === 'mps');
+    const pulse = 1 + Math.sin(time * 1.8 + n.pulse) * 0.025;
+    const scale = (isHovered ? 1.08 : 1) * pulse * (dealHighlight ? 1 : 0.82);
+    const r = n.r * scale;
+    const dim = dealHighlight ? 1 : 0.35;
+
+    n.x = n.baseX + Math.sin(time * 0.6 + n.pulse) * 3;
+    n.y = n.baseY + Math.cos(time * 0.5 + n.pulse) * 2;
+
+    const grad = ctx.createRadialGradient(n.x - r * 0.3, n.y - r * 0.3, r * 0.1, n.x, n.y, r);
+    grad.addColorStop(0, n.color);
+    grad.addColorStop(0.7, n.color);
+    grad.addColorStop(1, 'rgba(0,0,0,0.55)');
+
+    ctx.globalAlpha = dim;
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, r + 8, 0, Math.PI * 2);
+    ctx.fillStyle = n.glow;
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.strokeStyle = isHovered ? '#fff' : 'rgba(255,255,255,0.15)';
+    ctx.lineWidth = isHovered ? 2.5 : 1;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    ctx.fillStyle = '#fff';
+    ctx.font = `700 ${Math.max(11, r * 0.22)}px "DM Sans", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(n.id.toUpperCase(), n.x, n.y - 2);
+
+    ctx.fillStyle = 'rgba(232,236,244,0.75)';
+    ctx.font = `500 ${Math.max(9, r * 0.14)}px "DM Sans", sans-serif`;
+    ctx.fillText(`€${n.cap} mld`, n.x, n.y + r * 0.28);
+  }
+
+  function drawDealBadges() {
+    const mps = nodes.find(n => n.id === 'mps');
+    if (!mps) return;
+    const badges = [];
+    if (scenarioAlpha('isp') > 0.5) {
+      badges.push({ text: `ISP €${DEAL_VALUES.isp.toFixed(2)}`, color: '#00a872', offset: -1 });
+    }
+    if (scenarioAlpha('bpm') > 0.5) {
+      badges.push({ text: `BPM €${DEAL_VALUES.bpm.toFixed(2)}`, color: '#42a5f5', offset: 1 });
+    }
+    badges.forEach((b, i) => {
+      const bx = mps.x + b.offset * 55;
+      const by = mps.y - mps.r - 28 - i * 0;
+      ctx.font = '600 11px "DM Sans", sans-serif';
+      const tw = ctx.measureText(b.text).width + 16;
+      ctx.fillStyle = 'rgba(12,15,20,0.88)';
+      ctx.strokeStyle = b.color;
+      ctx.lineWidth = 1;
+      roundRect(ctx, bx - tw / 2, by - 12, tw, 24, 8);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = b.color;
+      ctx.textAlign = 'center';
+      ctx.fillText(b.text, bx, by + 1);
+    });
+  }
+
+  function roundRect(c, x, y, rw, rh, rad) {
+    c.beginPath();
+    c.moveTo(x + rad, y);
+    c.lineTo(x + rw - rad, y);
+    c.quadraticCurveTo(x + rw, y, x + rw, y + rad);
+    c.lineTo(x + rw, y + rh - rad);
+    c.quadraticCurveTo(x + rw, y + rh, x + rw - rad, y + rh);
+    c.lineTo(x + rad, y + rh);
+    c.quadraticCurveTo(x, y + rh, x, y + rh - rad);
+    c.lineTo(x, y + rad);
+    c.quadraticCurveTo(x, y, x + rad, y);
+    c.closePath();
+  }
+
+  function frame() {
+    time += 0.016;
+    ctx.clearRect(0, 0, w, h);
+    drawBackground();
+    drawConnections();
+    nodes.forEach(drawNode);
+    drawDealBadges();
+    rafId = requestAnimationFrame(frame);
+  }
+
+  function hitTest(mx, my) {
+    for (let i = nodes.length - 1; i >= 0; i--) {
+      const n = nodes[i];
+      const dx = mx - n.x, dy = my - n.y;
+      if (dx * dx + dy * dy <= (n.r + 6) ** 2) return n;
+    }
+    return null;
+  }
+
+  function showTooltip(n, clientX, clientY) {
+    const rect = wrap.getBoundingClientRect();
+    tooltip.innerHTML = `<strong>${n.label}</strong>Cap. €${n.cap} mld<br>${n.role}`;
+    tooltip.classList.add('visible');
+    tooltip.style.left = (clientX - rect.left) + 'px';
+    tooltip.style.top = (clientY - rect.top) + 'px';
+    tooltip.style.borderColor = n.color;
+  }
+
+  function hideTooltip() {
+    tooltip.classList.remove('visible');
+  }
+
+  function resize() {
+    const setup = setupCanvas(canvas, wrap);
+    ctx = setup.ctx;
+    w = setup.w;
+    h = setup.h;
+    layoutNodes();
+    rebuildParticles();
+  }
+
+  canvas.addEventListener('mousemove', e => {
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = e.clientX - rect.left;
+    mouse.y = e.clientY - rect.top;
+    const hit = hitTest(mouse.x, mouse.y);
+    if (hit) {
+      hovered = hit.id;
+      showTooltip(hit, e.clientX, e.clientY);
+      canvas.style.cursor = 'pointer';
+    } else {
+      hovered = null;
+      hideTooltip();
+      canvas.style.cursor = 'crosshair';
+    }
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    hovered = null;
+    hideTooltip();
+  });
+
+  window.addEventListener('resize', resize);
+  initStars();
+  resize();
+  frame();
+
+  return { resize, updateHud(exchangeRatio) {
+    const ispEl = document.getElementById('hudIsp');
+    const bpmEl = document.getElementById('hudBpm');
+    if (ispEl) ispEl.textContent = `OPAS → €${DEAL_VALUES.isp.toFixed(2).replace('.', ',')}/az`;
+    if (bpmEl) {
+      const v = exchangeRatio * PRICES.bpm;
+      bpmEl.textContent = `Fusione → €${v.toFixed(2).replace('.', ',')}/az`;
+      DEAL_VALUES.bpm = v;
+    }
+  }};
+})();
+
+/* Hero ambient canvas */
+(function initHeroCanvas() {
+  const canvas = document.getElementById('heroCanvas');
+  const hero = canvas?.closest('.hero');
+  if (!canvas || !hero) return;
+
+  let ctx, w, h, dots = [], rafId;
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    w = hero.offsetWidth;
+    h = hero.offsetHeight;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    dots = Array.from({ length: 45 }, () => ({
+      x: Math.random() * w, y: Math.random() * h,
+      vx: (Math.random() - 0.5) * 0.25, vy: (Math.random() - 0.5) * 0.25,
+      r: 1 + Math.random() * 1.5,
+    }));
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    dots.forEach(d => {
+      d.x += d.vx; d.y += d.vy;
+      if (d.x < 0 || d.x > w) d.vx *= -1;
+      if (d.y < 0 || d.y > h) d.vy *= -1;
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(139,149,168,0.35)';
+      ctx.fill();
+    });
+    for (let i = 0; i < dots.length; i++) {
+      for (let j = i + 1; j < dots.length; j++) {
+        const dx = dots[i].x - dots[j].x, dy = dots[i].y - dots[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 120) {
+          ctx.beginPath();
+          ctx.moveTo(dots[i].x, dots[i].y);
+          ctx.lineTo(dots[j].x, dots[j].y);
+          ctx.strokeStyle = `rgba(0,168,114,${0.08 * (1 - dist / 120)})`;
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+      }
+    }
+    rafId = requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  draw();
+})();
+
 function formatEuro(v) {
   return '€' + v.toFixed(2).replace('.', ',');
 }
@@ -982,6 +1520,7 @@ function init() {
       renderBarChart(document.getElementById('exchangeSlider').value / 100);
       renderRadar();
       updateSliderVisibility();
+      dealViz?.updateHud(document.getElementById('exchangeSlider').value / 100);
     });
   });
 
@@ -1001,6 +1540,7 @@ function init() {
     document.getElementById('sliderValue').textContent =
       `${ratio.toFixed(2)} azioni BPM → ${formatEuro(value)} per azione MPS`;
     renderBarChart(ratio);
+    dealViz?.updateHud(ratio);
   });
 
   document.querySelector('.toggle-btn[data-scenario="both"]').classList.add('active-both');
@@ -1008,6 +1548,7 @@ function init() {
   renderBarChart(0.76);
   renderRadar();
   updateSliderVisibility();
+  dealViz?.updateHud(0.76);
 }
 
 init();
