@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MPS: Intesa vs Banco BPM — Confronto Azionisti</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0c0f14;
+      --surface: #141922;
+      --surface-2: #1c2330;
+      --border: #2a3344;
+      --text: #e8ecf4;
+      --muted: #8b95a8;
+      --isp: #00855a;
+      --isp-light: #00a872;
+      --isp-bg: rgba(0, 133, 90, 0.12);
+      --bpm: #1565c0;
+      --bpm-light: #42a5f5;
+      --bpm-bg: rgba(21, 101, 192, 0.12);
+      --mps: #c62828;
+      --mps-light: #ef5350;
+      --positive: #4caf50;
+      --negative: #ef5350;
+      --neutral: #ffb74d;
+      --generali: #b71c1c;
+      --radius: 16px;
+      --shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #0c0f14 0%, #141922 50%, #0d1a2d 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 3rem 1.5rem 2.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -20%;
+      width: 60%;
+      height: 200%;
+      background: radial-gradient(ellipse, rgba(0,133,90,0.08) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -30%;
+      left: -10%;
+      width: 50%;
+      height: 150%;
+      background: radial-gradient(ellipse, rgba(21,101,192,0.08) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; position: relative; z-index: 1; }
+
+    .hero h1 {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.75rem;
+    }
+
+    .hero p { color: var(--muted); max-width: 720px; font-size: 1.05rem; }
+
+    .badge-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.25rem; }
+
+    .badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .badge.live { border-color: var(--neutral); color: var(--neutral); }
+
+    section { padding: 2.5rem 0; }
+
+    .section-title {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: 1.75rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .section-sub { color: var(--muted); margin-bottom: 1.75rem; font-size: 0.95rem; }
+
+    /* Scenario toggle */
+    .scenario-toggle {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .toggle-btn {
+      flex: 1;
+      min-width: 200px;
+      padding: 1rem 1.25rem;
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      text-align: left;
+    }
+
+    .toggle-btn:hover { border-color: var(--muted); }
+
+    .toggle-btn.active-isp {
+      border-color: var(--isp);
+      background: var(--isp-bg);
+      box-shadow: 0 0 0 1px var(--isp);
+    }
+
+    .toggle-btn.active-bpm {
+      border-color: var(--bpm);
+      background: var(--bpm-bg);
+      box-shadow: 0 0 0 1px var(--bpm);
+    }
+
+    .toggle-btn.active-both {
+      border-color: var(--muted);
+      background: var(--surface-2);
+    }
+
+    .toggle-btn small { display: block; font-weight: 400; color: var(--muted); margin-top: 0.25rem; font-size: 0.8rem; }
+
+    /* Shareholder tabs */
+    .shareholder-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      padding: 0.6rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: transparent;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab-btn:hover { color: var(--text); border-color: var(--muted); }
+
+    .tab-btn.active {
+      background: var(--text);
+      color: var(--bg);
+      border-color: var(--text);
+    }
+
+    /* Cards grid */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      box-shadow: var(--shadow);
+      transition: transform 0.2s, opacity 0.3s;
+    }
+
+    .card:hover { transform: translateY(-2px); }
+
+    .card.hidden { display: none; }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .card-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+    }
+
+    .card-icon.isp { background: var(--isp-bg); color: var(--isp-light); border: 1px solid var(--isp); }
+    .card-icon.bpm { background: var(--bpm-bg); color: var(--bpm-light); border: 1px solid var(--bpm); }
+    .card-icon.mps { background: rgba(198,40,40,0.12); color: var(--mps-light); border: 1px solid var(--mps); }
+
+    .card-title { font-size: 1.1rem; font-weight: 700; }
+    .card-subtitle { font-size: 0.8rem; color: var(--muted); }
+
+    .metric-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid rgba(42,51,68,0.5);
+      font-size: 0.9rem;
+    }
+
+    .metric-row:last-child { border-bottom: none; }
+    .metric-label { color: var(--muted); }
+    .metric-value { font-weight: 600; text-align: right; }
+
+    .verdict {
+      margin-top: 1.25rem;
+      padding: 1rem;
+      border-radius: 12px;
+      font-size: 0.875rem;
+    }
+
+    .verdict.positive { background: rgba(76,175,80,0.12); border: 1px solid rgba(76,175,80,0.3); }
+    .verdict.negative { background: rgba(239,83,80,0.12); border: 1px solid rgba(239,83,80,0.3); }
+    .verdict.neutral { background: rgba(255,183,77,0.12); border: 1px solid rgba(255,183,77,0.3); }
+
+    .verdict-label {
+      font-weight: 700;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.35rem;
+    }
+
+    .verdict.positive .verdict-label { color: var(--positive); }
+    .verdict.negative .verdict-label { color: var(--negative); }
+    .verdict.neutral .verdict-label { color: var(--neutral); }
+
+    /* Comparison bar chart */
+    .comparison-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+      margin-bottom: 2rem;
+    }
+
+    .bar-chart { margin-top: 1.5rem; }
+
+    .bar-group { margin-bottom: 1.5rem; }
+
+    .bar-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .bar-label span:first-child { color: var(--muted); }
+    .bar-label span:last-child { font-weight: 700; }
+
+    .bar-track {
+      height: 28px;
+      background: var(--surface-2);
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 8px;
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      padding-left: 0.75rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: white;
+      min-width: fit-content;
+    }
+
+    .bar-fill.isp { background: linear-gradient(90deg, var(--isp), var(--isp-light)); }
+    .bar-fill.bpm { background: linear-gradient(90deg, var(--bpm), var(--bpm-light)); }
+    .bar-fill.market { background: linear-gradient(90deg, #555, #777); }
+    .bar-fill.standalone { background: linear-gradient(90deg, #6a1b9a, #9c27b0); }
+
+    /* Slider for exchange ratio */
+    .slider-panel {
+      background: var(--surface-2);
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-top: 1rem;
+    }
+
+    .slider-panel label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--border);
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--bpm-light);
+      cursor: pointer;
+      border: 2px solid white;
+    }
+
+    .slider-value {
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-top: 0.75rem;
+      color: var(--bpm-light);
+    }
+
+    /* Details accordion */
+    .details-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+
+    .detail-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .detail-box summary {
+      padding: 1rem 1.25rem;
+      cursor: pointer;
+      font-weight: 600;
+      list-style: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .detail-box summary::-webkit-details-marker { display: none; }
+
+    .detail-box summary::after {
+      content: '+';
+      font-size: 1.25rem;
+      color: var(--muted);
+      transition: transform 0.2s;
+    }
+
+    .detail-box[open] summary::after { transform: rotate(45deg); }
+
+    .detail-content {
+      padding: 0 1.25rem 1.25rem;
+      font-size: 0.875rem;
+      color: var(--muted);
+    }
+
+    .detail-content ul { padding-left: 1.25rem; margin-top: 0.5rem; }
+    .detail-content li { margin-bottom: 0.35rem; }
+    .detail-content strong { color: var(--text); }
+
+    /* Generali section */
+    .generali-card {
+      background: linear-gradient(135deg, rgba(183,28,28,0.15) 0%, var(--surface) 100%);
+      border: 1px solid rgba(183,28,28,0.3);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+      margin-bottom: 2rem;
+    }
+
+    .generali-card h3 {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: 1.35rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .generali-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+    }
+
+    @media (max-width: 640px) {
+      .generali-grid { grid-template-columns: 1fr; }
+    }
+
+    .generali-col h4 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.75rem;
+    }
+
+    .generali-col.isp h4 { color: var(--isp-light); }
+    .generali-col.bpm h4 { color: var(--bpm-light); }
+
+    .sources {
+      margin-top: 3rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .sources a { color: var(--bpm-light); text-decoration: none; }
+    .sources a:hover { text-decoration: underline; }
+    .sources ul { padding-left: 1.25rem; margin-top: 0.5rem; }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--muted);
+      font-size: 0.8rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .score-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .score-badge.high { background: rgba(76,175,80,0.2); color: var(--positive); }
+    .score-badge.mid { background: rgba(255,183,77,0.2); color: var(--neutral); }
+    .score-badge.low { background: rgba(239,83,80,0.2); color: var(--negative); }
+
+    .radar-container {
+      display: flex;
+      justify-content: center;
+      margin: 1.5rem 0;
+    }
+
+    .radar-svg { max-width: 320px; width: 100%; }
+
+    .legend {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+  </style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="container">
+    <h1>MPS sotto assedio: Intesa vs Banco BPM</h1>
+    <p>Confronto interattivo delle due operazioni in competizione su Monte dei Paschi — corrispettivi, sinergie, ruolo Generali e impatto per azionisti MPS, ISP e BPM. Dati aggiornati a luglio 2026.</p>
+    <div class="badge-row">
+      <span class="badge live">● Aggiornamento 23 lug 2026</span>
+      <span class="badge">CDA MPS: bocciatura preliminare OPAS Intesa</span>
+      <span class="badge">Valutazione fusione BPM in corso</span>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+
+  <!-- Scenario selector -->
+  <section>
+    <h2 class="section-title">Seleziona scenario</h2>
+    <p class="section-sub">Clicca per filtrare le card e il grafico comparativo</p>
+
+    <div class="scenario-toggle">
+      <button class="toggle-btn active-both" data-scenario="both">
+        Confronto completo
+        <small>Entrambe le operazioni affiancate</small>
+      </button>
+      <button class="toggle-btn" data-scenario="isp">
+        OPAS Intesa Sanpaolo
+        <small>Offerta vincolante del 8 giu 2026</small>
+      </button>
+      <button class="toggle-btn" data-scenario="bpm">
+        Fusione Banco BPM
+        <small>Proposta merger of equals del 7 giu 2026</small>
+      </button>
+    </div>
+  </section>
+
+  <!-- Shareholder perspective -->
+  <section>
+    <h2 class="section-title">Prospettiva azionista</h2>
+    <p class="section-sub">Analisi del valore distinta per tipologia di investitore</p>
+
+    <div class="shareholder-tabs">
+      <button class="tab-btn active" data-shareholder="mps">Azionisti MPS</button>
+      <button class="tab-btn" data-shareholder="isp">Azionisti ISP</button>
+      <button class="tab-btn" data-shareholder="bpm">Azionisti BPM</button>
+    </div>
+
+    <div class="cards-grid" id="cardsGrid"></div>
+  </section>
+
+  <!-- Value comparison chart -->
+  <section>
+    <div class="comparison-panel">
+      <h2 class="section-title">Corrispettivo implicito per azione MPS</h2>
+      <p class="section-sub">Prezzi di riferimento al 15 luglio 2026 — ISP €6,34 · MPS €11,41 · BPM €15,42</p>
+
+      <div class="bar-chart" id="barChart"></div>
+
+      <div class="slider-panel" id="bpmSliderPanel">
+        <label>Simula il rapporto di concambio BPM/MPS (proposta non ancora definitiva — range analisti 0,75–0,77)</label>
+        <input type="range" id="exchangeSlider" min="70" max="80" value="76" step="1">
+        <div class="slider-value" id="sliderValue">0,76 azioni BPM → €11,72 per azione MPS</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Radar comparison -->
+  <section>
+    <div class="comparison-panel">
+      <h2 class="section-title">Scorecard comparativa</h2>
+      <p class="section-sub">Valutazione relativa su 5 dimensioni (1–10) per il profilo azionista selezionato</p>
+      <div class="radar-container">
+        <svg class="radar-svg" viewBox="0 0 320 320" id="radarChart"></svg>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><span class="legend-dot" style="background:var(--isp-light)"></span> Intesa OPAS</div>
+        <div class="legend-item"><span class="legend-dot" style="background:var(--bpm-light)"></span> BPM Fusione</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Generali stake -->
+  <section>
+    <div class="generali-card">
+      <h3>🦁 Quota Generali (~13% via Mediobanca)</h3>
+      <div class="generali-grid">
+        <div class="generali-col isp">
+          <h4>Scenario Intesa</h4>
+          <ul style="font-size:0.875rem;color:var(--muted);padding-left:1.25rem">
+            <li>Acquisizione quota MPS → controllo ~13% Generali (via Mediobanca) + acquisto diretto 3,01%</li>
+            <li>Obiettivo: <strong style="color:var(--text)">Danish Compromise</strong> — trattamento favorevole CET1 (+60-70 bp se riconosciuto)</li>
+            <li>Intesa dichiara investimento <strong style="color:var(--text)">puramente finanziario</strong>, nessun coinvolgimento gestionale</li>
+            <li>CDA MPS critica: Generali finirebbe a un <strong style="color:var(--text)">concorrente diretto</strong> in assicurazioni vita</li>
+            <li>Rischio: approvazione regolamentare non garantita</li>
+          </ul>
+        </div>
+        <div class="generali-col bpm">
+          <h4>Scenario BPM</h4>
+          <ul style="font-size:0.875rem;color:var(--muted);padding-left:1.25rem">
+            <li>Quota Generali resta nel nuovo gruppo BPM-MPS come <strong style="color:var(--text)">asset strategico</strong></li>
+            <li>Potenziale estensione Danish Compromise → CET1 pro-forma ~16%</li>
+            <li>Ampliamento opzioni strategiche (partnership assicurative, valorizzazione partecipazione)</li>
+            <li>Partner bancassicurazione BPM: <strong style="color:var(--text)">Crédit Agricole</strong> (29,3%) — possibili sinergie cross-border</li>
+            <li>Nessuno smembramento del perimetro MPS-Mediobanca-Generali</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Deal details -->
+  <section>
+    <h2 class="section-title">Dettagli operativi</h2>
+    <p class="section-sub">Espandi per i termini chiave di ciascuna operazione</p>
+
+    <div class="details-grid">
+      <details class="detail-box">
+        <summary>OPAS Intesa Sanpaolo — Termini</summary>
+        <div class="detail-content">
+          <ul>
+            <li><strong>Data annuncio:</strong> 8 giugno 2026</li>
+            <li><strong>Corrispettivo:</strong> 1,6 azioni ISP (nuova emissione) + €1,00 cash per azione MPS</li>
+            <li><strong>Concambio:</strong> 16 ISP ogni 10 MPS</li>
+            <li><strong>Valorizzazione:</strong> €30,6 mld totali (€10,091/az al 5 giu)</li>
+            <li><strong>Premio:</strong> +12,5% vs chiusura 5 giu · +17,4% VWAP 3 mesi · +18,7% VWAP 6 mesi</li>
+            <li><strong>Soglia:</strong> minimo 66,67% azioni MPS (rinunciabile da ISP)</li>
+            <li><strong>Perfezionamento atteso:</strong> dicembre 2026</li>
+            <li><strong>Carve-out Unipol:</strong> ~635 filiali + brand MPS → €3,0-3,5 mld cash</li>
+            <li><strong>Retained:</strong> Mediobanca, ~625 filiali, ~80% utile MPS+Mediobanca</li>
+          </ul>
+        </div>
+      </details>
+
+      <details class="detail-box">
+        <summary>OPAS Intesa — Sinergie &amp; finanziari</summary>
+        <div class="detail-content">
+          <ul>
+            <li><strong>Sinergie a regime (2029):</strong> €2,9 mld/anno ante imposte</li>
+            <li>Costi: €1,5 mld (10% base costi pro-forma) · Ricavi: €1,4 mld</li>
+            <li><strong>Oneri integrazione:</strong> €2,1 mld ante imposte (€1,4 mld netti)</li>
+            <li><strong>Utile netto 2029:</strong> &gt;€16 mld (vs €11,5 mld standalone ISP)</li>
+            <li><strong>ROE 2029:</strong> &gt;20%</li>
+            <li><strong>Distribuzioni 2025-29:</strong> ~€61 mld (+€11 mld vs piano ISP)</li>
+            <li><strong>Distribuzione straordinaria:</strong> €2,7 mld cash (2026-27)</li>
+            <li><strong>Accrescimento EPS/DPS:</strong> ~+8% vs piano standalone</li>
+            <li><strong>CET1 2029:</strong> &gt;14%</li>
+          </ul>
+        </div>
+      </details>
+
+      <details class="detail-box">
+        <summary>Fusione BPM — Termini</summary>
+        <div class="detail-content">
+          <ul>
+            <li><strong>Data proposta:</strong> 7 giugno 2026</li>
+            <li><strong>Struttura:</strong> Merger of equals (concambio da definire)</li>
+            <li><strong>Concambio stimato:</strong> 0,75-0,77 azioni BPM per azione MPS (MF)</li>
+            <li><strong>Cap. combinata:</strong> &gt;€50 mld</li>
+            <li><strong>Governance:</strong> equilibrio e rappresentatività, brand preservati</li>
+            <li><strong>Sedi:</strong> Milano + Siena mantenute</li>
+            <li><strong>Integrazione Mediobanca:</strong> complementare e coordinata</li>
+            <li><strong>Azionista chiave:</strong> Crédit Agricole 29,3% BPM — assenso necessario</li>
+            <li><strong>Timeline:</strong> piano possibile entro 6 ago 2026 (semestrale MPS)</li>
+          </ul>
+        </div>
+      </details>
+
+      <details class="detail-box">
+        <summary>Fusione BPM — Sinergie &amp; finanziari</summary>
+        <div class="detail-content">
+          <ul>
+            <li><strong>Sinergie a regime:</strong> &gt;€1,1 mld/anno ante imposte</li>
+            <li>Costi: &gt;€650 mln · Ricavi: &gt;€450 mln (€250 mln reti + €200 mln fabbriche)</li>
+            <li><strong>Oneri integrazione:</strong> ~€1,1 mld ante imposte</li>
+            <li><strong>Creazione valore netta:</strong> ≥€5,5 mld</li>
+            <li><strong>Utile netto a regime:</strong> ~€6 mld</li>
+            <li><strong>Accrescimento EPS:</strong> &gt;+10% per entrambe le banche</li>
+            <li><strong>CET1 pro-forma:</strong> ~15% (~16% con Danish Compromise su Generali)</li>
+            <li><strong>Payout:</strong> superiore ai piani standalone combinati</li>
+          </ul>
+        </div>
+      </details>
+
+      <details class="detail-box">
+        <summary>Posizione CDA MPS (16 lug 2026)</summary>
+        <div class="detail-content">
+          <ul>
+            <li><strong>OPAS Intesa:</strong> corrispettivo sotto-valutante, premio inferiore alla media OPAS italiane</li>
+            <li>Al 15 lug: <strong>sconto -3,3%</strong> vs prezzo di mercato MPS (-6,2% aggiustato per dividendo interim ISP)</li>
+            <li>Perplessità su sinergie €2,9 mld ("particolarmente elevate")</li>
+            <li>Rischi antitrust, incertezza Danish Compromise, smembramento brand/rete</li>
+            <li><strong>Proposta BPM:</strong> merita approfondimento — valorizza intero perimetro senza spezzatino</li>
+            <li>Piano standalone MPS-Mediobanca: €16 mld remunerazione cumulata, CET1 16%, €3 mld capitale eccedente</li>
+          </ul>
+        </div>
+      </details>
+
+      <details class="detail-box">
+        <summary>Capitalizzazioni di riferimento</summary>
+        <div class="detail-content">
+          <ul>
+            <li><strong>Intesa Sanpaolo:</strong> ~€111 mld · €6,34/az</li>
+            <li><strong>MPS:</strong> ~€33,5 mld · €11,41/az</li>
+            <li><strong>Banco BPM:</strong> ~€23,3 mld · €15,42/az</li>
+            <li><strong>Generali:</strong> ~€53,5 mld</li>
+            <li><strong>Mediobanca:</strong> componente integrata nel perimetro MPS</li>
+          </ul>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <div class="sources">
+    <strong>Fonti principali</strong>
+    <ul>
+      <li><a href="https://group.intesasanpaolo.com/it/investor-relations/comunicati-stampa-price-sensitive/2026/06/20260608-ir-it" target="_blank">Comunicato Intesa Sanpaolo OPAS MPS (8 giu 2026)</a></li>
+      <li><a href="https://gruppo.bancobpm.it/media/dlm_uploads/2026_06_07-Banco-BPM-Submission-of-a-proposal-to-MPS.pdf" target="_blank">Proposta Banco BPM a MPS (7 giu 2026)</a></li>
+      <li><a href="https://gruppomps.it/static/upload/mps/mps-comunicato-stampa-16_7_2026_rq.pdf" target="_blank">Considerazioni preliminari CDA MPS (16 lug 2026)</a></li>
+      <li><a href="https://www.ilsole24ore.com/art/mps-cda-avanti-la-valutazione-proposta-banco-bpm-AJCxMHM" target="_blank">Il Sole 24 Ore — Valutazione proposta BPM</a></li>
+      <li><a href="https://www.money.it/azioni-mps-e-banco-bpm-sotto-i-riflettori-c-e-la-data-per-un-piano-anti-intesa-sanpaolo" target="_blank">Money.it — Concambio 0,75-0,77</a></li>
+    </ul>
+    <p style="margin-top:1rem"><em>Nota: analisi a scopo informativo, non costituisce consulenza finanziaria. I corrispettivi BPM sono stimati — l'operazione non ha ancora termini vincolanti.</em></p>
+  </div>
+</main>
+
+<footer>
+  Confronto MPS · Intesa Sanpaolo vs Banco BPM · Luglio 2026
+</footer>
+
+<script>
+const PRICES = { isp: 6.34, mps: 11.41, bpm: 15.42 };
+
+const SHAREHOLDER_DATA = {
+  mps: {
+    isp: {
+      title: 'Azionisti MPS → Intesa',
+      subtitle: 'OPAS vincolante · corrispettivo fisso',
+      metrics: [
+        { label: 'Corrispettivo immediato', value: '€11,14/az', note: '1,6×€6,34 + €1' },
+        { label: 'vs Prezzo mercato MPS', value: '-2,4%', note: 'sconto al 15 lug' },
+        { label: 'Premio vs annuncio (5 giu)', value: '+12,5%', note: '€10,09 implicito' },
+        { label: 'Upside sinergie (2029)', value: 'Alto', note: '€2,9 mld/anno nel gruppo ISP' },
+        { label: 'Brand & rete MPS', value: 'Persi', note: '~635 filiali → Unipol' },
+        { label: 'Esposizione Generali', value: 'Indiretta', note: 'via azioni ISP, no controllo' },
+        { label: 'Rischio esecuzione', value: 'Medio-alto', note: 'antitrust, DC, dividendo ISP' },
+      ],
+      verdict: 'neutral',
+      verdictTitle: 'Verdetto: Neutro / Leggermente negativo a breve',
+      verdictText: 'Il corrispettivo è sotto il prezzo di mercato attuale (-3,3% secondo il CDA MPS). L\'upside dipende interamente dall\'andamento di ISP e dalla realizzazione delle sinergie. Lo smembramento del brand MPS e l\'incertezza regolamentare (Danish Compromise, antitrust) pesano. Accettabile solo per chi crede nel track record di integrazione di Messina e nella policy di distribuzione elevata di ISP.',
+      scores: [5, 8, 4, 7, 5]
+    },
+    bpm: {
+      title: 'Azionisti MPS → BPM',
+      subtitle: 'Fusione tra pari · concambio da negoziare',
+      metrics: [
+        { label: 'Corrispettivo stimato (0,76)', value: '€11,72/az', note: '0,76×€15,42' },
+        { label: 'vs Prezzo mercato MPS', value: '+2,7%', note: 'premium al 15 lug' },
+        { label: 'Brand & rete MPS', value: 'Preservati', note: 'merger of equals' },
+        { label: 'Upside sinergie', value: 'Medio', note: '€1,1 mld/anno (vs €2,9 ISP)' },
+        { label: 'Quota Generali', value: 'Strategica', note: 'opzioni valorizzazione + DC' },
+        { label: 'Governance', value: 'Equilibrata', note: 'MPS ~59% cap. combinata' },
+        { label: 'Rischio esecuzione', value: 'Medio', note: 'assenso Crédit Agricole' },
+      ],
+      verdict: 'positive',
+      verdictTitle: 'Verdetto: Preferibile se concambio ≥0,76',
+      verdictText: 'Con un rapporto di scambio competitivo (0,75-0,77), la fusione BPM offre un corrispettivo superiore al mercato, preserva il brand senese e mantiene la quota Generali come asset strategico. Sinergie inferiori a Intesa ma rischio di esecuzione più basso (operazione consensuale). Il CDA MPS ha espresso favore per l\'approfondimento proprio per l\'assenza di spezzatino.',
+      scores: [7, 5, 9, 6, 7]
+    }
+  },
+  isp: {
+    isp: {
+      title: 'Azionisti ISP — OPAS',
+      subtitle: 'Operazione accretiva · dilution controllata',
+      metrics: [
+        { label: 'Accrescimento EPS 2029', value: '~+8%', note: 'vs piano standalone' },
+        { label: 'Utile netto 2029', value: '>€16 mld', note: 'vs €11,5 mld standalone' },
+        { label: 'Distribuzioni 2025-29', value: '~€61 mld', note: '+€11 mld vs piano' },
+        { label: 'ROE 2029', value: '>20%', note: 'leader europeo' },
+        { label: 'CET1 2029', value: '>14%', note: 'solido anche senza DC' },
+        { label: 'Costo acquisizione', value: '€30,6 mld', note: 'nuove azioni + €3 mld cash' },
+        { label: 'Recupero Unipol', value: '€3-3,5 mld', note: 'riduce impatto capitale' },
+      ],
+      verdict: 'positive',
+      verdictTitle: 'Verdetto: Molto positivo',
+      verdictText: 'L\'OPAS è chiaramente accretiva: EPS +8%, distribuzioni +€11 mld, ROE >20%. Mediobanca rafforza C&IB e Wealth Management. La quota Generali (via Danish Compromise) aggiunge upside patrimoniale. I rischi (antitrust, costi integrazione €2,1 mld) sono gestiti proattivamente con l\'accordo Unipol. Dilution limitata grazie al cash Unipol e alla forte generazione organica.',
+      scores: [9, 9, 7, 8, 6]
+    },
+    bpm: {
+      title: 'Azionisti ISP — Scenario BPM vince',
+      subtitle: 'Intesa perde MPS · consolida leadership',
+      metrics: [
+        { label: 'Impatto diretto', value: 'Nullo', note: 'operazione tra terzi' },
+        { label: 'Effetto competitivo', value: 'Negativo', note: 'nasce 2° polo bancario (~€57 mld)' },
+        { label: 'Generali', value: 'Fuori reach', note: 'quota resta in BPM-MPS' },
+        { label: 'Posizione mercato', value: 'Confermata', note: '1° banca IT (~€111 mld)' },
+        { label: 'Strategia WM/C&IB', value: 'Standalone', note: 'piano 2026-29 invariato' },
+        { label: 'Opportunità M&A', value: 'Capitali liberi', note: '€30 mld non spesi su MPS' },
+      ],
+      verdict: 'neutral',
+      verdictTitle: 'Verdetto: Neutro con rischio competitivo',
+      verdictText: 'Se MPS sceglie BPM, gli azionisti ISP non subiscono dilution né costi di integrazione. Restano però esclusi da Mediobanca, Generali e dal consolidamento del secondo polo. Intesa mantiene la leadership assoluta ma affronta un competitor più grande. I capitali risparmiati (~€30 mld) potrebbero essere redeployati in M&A WM o buyback.',
+      scores: [6, 6, 8, 5, 7]
+    }
+  },
+  bpm: {
+    isp: {
+      title: 'Azionisti BPM — Scenario Intesa vince',
+      subtitle: 'Operazione non realizzata',
+      metrics: [
+        { label: 'Impatto diretto', value: 'Nullo', note: 'BPM resta standalone' },
+        { label: 'Cap. di mercato', value: '~€23,3 mld', note: 'invariata' },
+        { label: 'Posizione competitiva', value: '3° banca IT', note: 'dietro ISP e nuovo ISP+MPS' },
+        { label: 'Crédit Agricole', value: '29,3% invariato', note: 'nessuna dilution' },
+        { label: 'Opportunità future', value: 'Aperte', note: 'possibili altre M&A' },
+      ],
+      verdict: 'negative',
+      verdictTitle: 'Verdetto: Occasione mancata',
+      verdictText: 'La vittoria di Intesa su MPS significa che BPM perde l\'opportunità di creare il secondo polo bancario italiano. Resta terzo operatore con ~€23 mld di cap., significativamente distanziato dal nuovo gigante ISP+MPS (~€140 mld pro-forma). Crédit Agricole mantiene la posizione ma il perimetro strategico non si espande.',
+      scores: [3, 4, 7, 4, 5]
+    },
+    bpm: {
+      title: 'Azionisti BPM — Fusione',
+      subtitle: 'Dilution significativa · upside industriale',
+      metrics: [
+        { label: 'Accrescimento EPS', value: '>+10%', note: 'target BPM' },
+        { label: 'Creazione valore', value: '≥€5,5 mld', note: 'netta sinergie - costi' },
+        { label: 'Cap. combinata', value: '>€57 mld', note: '2° operatore IT' },
+        { label: 'Dilution azionisti BPM', value: '~41%', note: 'MPS ~59% per cap.' },
+        { label: 'Crédit Agricole post-deal', value: '~12%', note: '29,3% × 41%' },
+        { label: 'CET1 pro-forma', value: '~15-16%', note: 'con Danish Compromise' },
+        { label: 'Utile netto a regime', value: '~€6 mld', note: 'gruppo combinato' },
+      ],
+      verdict: 'positive',
+      verdictTitle: 'Verdetto: Positivo se governance equilibrata',
+      verdictText: 'La fusione è accretiva per EPS (>+10%) e crea €5,5 mld di valore. Gli azionisti BPM subiscono dilution (~59% al controllo MPS) ma ottengono scale, complementarità territoriale (Nord+Centro-Sud) e la quota Generali. Crédit Agricole scende al ~12% — il suo assenso è la condizione critica. Governance equilibrata e brand preservati sono fondamentali per il consenso.',
+      scores: [8, 7, 8, 7, 6]
+    }
+  }
+};
+
+const SCORE_LABELS = ['Corrispettivo', 'Upside industriale', 'Preservazione identità', 'Rischio esecuzione', 'Governance'];
+
+let currentScenario = 'both';
+let currentShareholder = 'mps';
+
+function formatEuro(v) {
+  return '€' + v.toFixed(2).replace('.', ',');
+}
+
+function renderCards() {
+  const grid = document.getElementById('cardsGrid');
+  grid.innerHTML = '';
+
+  const data = SHAREHOLDER_DATA[currentShareholder];
+  const scenarios = currentScenario === 'both' ? ['isp', 'bpm'] : [currentScenario];
+
+  scenarios.forEach(key => {
+    const d = data[key];
+    const iconClass = key === 'isp' ? 'isp' : 'bpm';
+    const iconLabel = key === 'isp' ? 'ISP' : 'BPM';
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.scenario = key;
+
+    card.innerHTML = `
+      <div class="card-header">
+        <div class="card-icon ${iconClass}">${iconLabel}</div>
+        <div>
+          <div class="card-title">${d.title}</div>
+          <div class="card-subtitle">${d.subtitle}</div>
+        </div>
+      </div>
+      ${d.metrics.map(m => `
+        <div class="metric-row">
+          <span class="metric-label">${m.label}</span>
+          <span class="metric-value">${m.value}${m.note ? `<br><small style="font-weight:400;color:var(--muted);font-size:0.75rem">${m.note}</small>` : ''}</span>
+        </div>
+      `).join('')}
+      <div class="verdict ${d.verdict}">
+        <div class="verdict-label">${d.verdictTitle}</div>
+        ${d.verdictText}
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function renderBarChart(exchangeRatio = 0.76) {
+  const chart = document.getElementById('barChart');
+  const ispValue = 1.6 * PRICES.isp + 1;
+  const bpmValue = exchangeRatio * PRICES.bpm;
+  const maxVal = Math.max(PRICES.mps, ispValue, bpmValue) * 1.1;
+
+  const bars = [
+    { label: 'Prezzo mercato MPS', value: PRICES.mps, class: 'market', pct: PRICES.mps / maxVal * 100 },
+    { label: 'OPAS Intesa (1,6 ISP + €1)', value: ispValue, class: 'isp', pct: ispValue / maxVal * 100 },
+    { label: `Fusione BPM (${exchangeRatio.toFixed(2)} BPM/MPS)`, value: bpmValue, class: 'bpm', pct: bpmValue / maxVal * 100 },
+  ];
+
+  if (currentScenario === 'isp') bars.splice(2, 1);
+  if (currentScenario === 'bpm') bars.splice(1, 1);
+
+  chart.innerHTML = bars.map(b => `
+    <div class="bar-group">
+      <div class="bar-label">
+        <span>${b.label}</span>
+        <span>${formatEuro(b.value)} ${b.value > PRICES.mps ? `(+${((b.value/PRICES.mps-1)*100).toFixed(1)}%)` : b.value < PRICES.mps ? `(${((b.value/PRICES.mps-1)*100).toFixed(1)}%)` : ''}</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill ${b.class}" style="width:${b.pct}%">${formatEuro(b.value)}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderRadar() {
+  const svg = document.getElementById('radarChart');
+  const data = SHAREHOLDER_DATA[currentShareholder];
+  const cx = 160, cy = 160, r = 110;
+  const n = SCORE_LABELS.length;
+  const angles = Array.from({length: n}, (_, i) => (Math.PI * 2 * i / n) - Math.PI / 2);
+
+  function point(score, angle) {
+    const dist = (score / 10) * r;
+    return [cx + dist * Math.cos(angle), cy + dist * Math.sin(angle)];
+  }
+
+  function polygon(scores, color, opacity) {
+    const pts = scores.map((s, i) => point(s, angles[i]).join(',')).join(' ');
+    return `<polygon points="${pts}" fill="${color}" fill-opacity="${opacity}" stroke="${color}" stroke-width="2"/>`;
+  }
+
+  const gridLevels = [2, 4, 6, 8, 10];
+  let html = '';
+
+  gridLevels.forEach(level => {
+    const pts = angles.map(a => point(level, a).join(',')).join(' ');
+    html += `<polygon points="${pts}" fill="none" stroke="#2a3344" stroke-width="1"/>`;
+  });
+
+  angles.forEach((a, i) => {
+    const [x, y] = point(10, a);
+    const [lx, ly] = point(12.5, a);
+    html += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="#2a3344" stroke-width="1"/>`;
+    html += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" fill="#8b95a8" font-size="10" font-family="DM Sans">${SCORE_LABELS[i]}</text>`;
+  });
+
+  if (currentScenario === 'both' || currentScenario === 'isp') {
+    html += polygon(data.isp.scores, '#00a872', 0.25);
+  }
+  if (currentScenario === 'both' || currentScenario === 'bpm') {
+    html += polygon(data.bpm.scores, '#42a5f5', 0.25);
+  }
+
+  svg.innerHTML = html;
+}
+
+function updateSliderVisibility() {
+  document.getElementById('bpmSliderPanel').style.display =
+    currentScenario === 'isp' ? 'none' : 'block';
+}
+
+function init() {
+  document.querySelectorAll('.toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.toggle-btn').forEach(b => {
+        b.classList.remove('active-both', 'active-isp', 'active-bpm');
+      });
+      currentScenario = btn.dataset.scenario;
+      btn.classList.add('active-' + currentScenario);
+      renderCards();
+      renderBarChart(document.getElementById('exchangeSlider').value / 100);
+      renderRadar();
+      updateSliderVisibility();
+    });
+  });
+
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentShareholder = btn.dataset.shareholder;
+      renderCards();
+      renderRadar();
+    });
+  });
+
+  document.getElementById('exchangeSlider').addEventListener('input', e => {
+    const ratio = e.target.value / 100;
+    const value = ratio * PRICES.bpm;
+    document.getElementById('sliderValue').textContent =
+      `${ratio.toFixed(2)} azioni BPM → ${formatEuro(value)} per azione MPS`;
+    renderBarChart(ratio);
+  });
+
+  document.querySelector('.toggle-btn[data-scenario="both"]').classList.add('active-both');
+  renderCards();
+  renderBarChart(0.76);
+  renderRadar();
+  updateSliderVisibility();
+}
+
+init();
+</script>
+</body>
+</html>
