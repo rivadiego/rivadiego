@@ -78,11 +78,11 @@ MASTER_COLUMNS = [
 
 CONFIG_TABLE = "tblAccounts"
 
-# Selectors (column C on dashboard sheets)
-SEL_PERIOD = "C5"
-SEL_ASSET = "C6"
-SEL_CUSTOM_START = "C7"
-SEL_CUSTOM_END = "C8"
+# Selectors aligned with build_filter_panel rows (C4:C7)
+SEL_PERIOD = "C4"
+SEL_ASSET = "C5"
+SEL_CUSTOM_START = "C6"
+SEL_CUSTOM_END = "C7"
 
 TABLE_HEADER_ROW = 48
 TABLE_DATA_START = 49
@@ -605,6 +605,74 @@ def build_account_overview(ws, start_row: int):
         ws.cell(row=tr, column=c).border = BORDER_BOX
 
 
+def build_leggimi_sheet(wb: Workbook):
+    ws = wb.create_sheet("Leggimi", 0)
+    ws.sheet_view.showGridLines = False
+    style_header_band(ws, 1, "F", "PORTFOLIO TRACKER — GUIDA RAPIDA")
+    lines = [
+        ("", ""),
+        ("DOVE SONO I DATI", ""),
+        ("Barclays ISA", "Foglio 'Barclays ISA' → scorri alla riga 48 (Master Investment Table). 5 posizioni precaricate."),
+        ("Intesa Sanpaolo", "Foglio 'Intesa Sanpaolo' → riga 48. Obbligazione Romania XS2829810923 precaricata."),
+        ("Summary", "Dashboard aggregata — si popola automaticamente dalle tabelle conto."),
+        ("", ""),
+        ("REQUISITI", ""),
+        ("Excel", "Microsoft 365 obbligatorio (formule LET, FILTER, BYROW). Excel 2019 o precedente NON funziona."),
+        ("Calcolo", "Abilita calcolo automatico: Formule → Opzioni di calcolo → Automatico."),
+        ("", ""),
+        ("DOWNLOAD CORRETTO", ""),
+        ("GitHub", "Scarica dal branch cursor/portfolio-tracker-excel-703c (non da main — il PR non è ancora mergiato)."),
+        ("Link diretto", "github.com/rivadiego/rivadiego/blob/cursor/portfolio-tracker-excel-703c/portfolio-tracker/Portfolio_Tracker.xlsx"),
+        ("", ""),
+        ("MANUTENZIONE", ""),
+        ("Aggiornare prezzi", "Colonna 'Current Price' nella tabella master di ogni conto."),
+        ("Nuovi investimenti", "Aggiungi una riga alla tabella — si espande automaticamente."),
+        ("FX GBP", "Colonna 'FX to EUR' per posizioni Barclays in sterline."),
+    ]
+    r = 3
+    for title, body in lines:
+        if title == "":
+            r += 1
+            continue
+        ws[f"A{r}"] = title
+        ws[f"A{r}"].font = FONT_SECTION if body == "" else FONT_KPI_VAL
+        if body:
+            ws[f"B{r}"] = body
+            ws[f"B{r}"].font = FONT_LABEL
+            ws.merge_cells(f"B{r}:F{r}")
+        else:
+            ws.merge_cells(f"A{r}:F{r}")
+        r += 1
+    ws.column_dimensions["A"].width = 22
+    ws.column_dimensions["B"].width = 70
+
+
+def build_holdings_snapshot(ws, start_row: int):
+    """Visible consolidated holdings — direct cell refs so data always displays."""
+    write_section_title(ws, start_row, "A", "Holdings Snapshot (all accounts)", "F")
+    headers = ["Account", "Ticker", "Security Name", "Asset Class", "Value (EUR)", "Status"]
+    write_table_header(ws, start_row + 1, headers)
+    refs = [
+        ("Barclays ISA", 49),
+        ("Barclays ISA", 50),
+        ("Barclays ISA", 51),
+        ("Barclays ISA", 52),
+        ("Barclays ISA", 53),
+        ("Intesa Sanpaolo", 49),
+    ]
+    for i, (acct, rn) in enumerate(refs):
+        r = start_row + 2 + i
+        ws.cell(row=r, column=1, value=acct).font = FONT_LABEL
+        ws.cell(row=r, column=2, value=f"='{acct}'!C{rn}")
+        ws.cell(row=r, column=3, value=f"='{acct}'!D{rn}")
+        ws.cell(row=r, column=4, value=f"='{acct}'!A{rn}")
+        ws.cell(row=r, column=5, value=f"='{acct}'!P{rn}")
+        ws.cell(row=r, column=6, value=f"='{acct}'!Y{rn}")
+        ws.cell(row=r, column=5).number_format = EUR
+        for c in range(1, 7):
+            ws.cell(row=r, column=c).border = BORDER_BOX
+
+
 def build_summary_sheet(wb: Workbook):
     ws = wb.create_sheet("Summary", 1)
     ws.sheet_view.showGridLines = False
@@ -621,6 +689,7 @@ def build_summary_sheet(wb: Workbook):
     build_asset_breakdown(ws, 13, "portfolio")
     build_period_matrix(ws, 23, "portfolio")
     build_account_overview(ws, 31)
+    build_holdings_snapshot(ws, 39)
     add_validations(ws)
 
     widths = {"A": 18, "B": 14, "C": 12, "D": 12, "E": 12, "F": 12, "G": 12, "H": 10, "I": 12, "J": 10}
@@ -776,7 +845,7 @@ def build_account_sheet(wb: Workbook, account: str):
     build_asset_breakdown(ws, 13, "account", account)
     build_period_matrix(ws, 23, "account", account)
 
-    ws[f"A{TABLE_HEADER_ROW - 2}"] = "MASTER INVESTMENT TABLE"
+    ws[f"A{TABLE_HEADER_ROW - 2}"] = "MASTER INVESTMENT TABLE  —  dati visibili da riga 49 in giù"
     ws[f"A{TABLE_HEADER_ROW - 2}"].font = FONT_SECTION
     ws[f"A{TABLE_HEADER_ROW - 1}"] = "Single source of truth for this account — all metrics above are formula-linked to this table."
     ws[f"A{TABLE_HEADER_ROW - 1}"].font = FONT_SUB
@@ -841,9 +910,10 @@ def build_workbook() -> Path:
     wb = Workbook()
     wb.remove(wb.active)
     build_config_sheet(wb)
-    build_summary_sheet(wb)
+    build_leggimi_sheet(wb)
     for account in ACCOUNTS:
         build_account_sheet(wb, account)
+    build_summary_sheet(wb)
     wb.properties.title = "Investment Portfolio Tracker"
     wb.properties.creator = "Portfolio Tracker"
     wb.save(OUTPUT)
