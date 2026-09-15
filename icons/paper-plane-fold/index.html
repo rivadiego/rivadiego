@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Paper plane fold icons</title>
+    <style>
+      :root {
+        --orange: #ffa45c;
+        --orange-soft: #fff3e9;
+        --ink: #2b2622;
+        --muted: #8a807a;
+        --paper: #fffcf9;
+        --line: #f0e6de;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 64px 24px 96px;
+        background: var(--paper);
+        color: var(--ink);
+        font: 400 16px/1.6 ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+      }
+
+      header {
+        margin-bottom: 56px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: 28px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+
+      header p {
+        margin: 0;
+        color: var(--muted);
+        max-width: 56ch;
+      }
+
+      h2 {
+        margin: 0 0 20px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      section {
+        margin-bottom: 56px;
+      }
+
+      .steps {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 16px;
+      }
+
+      .step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+        padding: 24px 16px 20px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: #fff;
+        text-align: center;
+      }
+
+      .step .num {
+        display: grid;
+        place-items: center;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: var(--orange-soft);
+        color: var(--orange);
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .step .label {
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .icon {
+        width: 48px;
+        height: 48px;
+        color: var(--orange);
+      }
+
+      .row {
+        display: flex;
+        align-items: flex-end;
+        gap: 28px;
+        flex-wrap: wrap;
+        padding: 28px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: #fff;
+      }
+
+      .row .icon {
+        color: var(--orange);
+      }
+
+      .size figure {
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .size figcaption {
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      .s16 { width: 16px; height: 16px; }
+      .s24 { width: 24px; height: 24px; }
+      .s32 { width: 32px; height: 32px; }
+      .s48 { width: 48px; height: 48px; }
+      .s72 { width: 72px; height: 72px; }
+
+      .tint .icon { width: 40px; height: 40px; }
+      .tint .a { color: #ffa45c; }
+      .tint .b { color: #ffc89a; }
+      .tint .c { color: #f2762b; }
+      .tint .d { color: #2b2622; }
+
+      .on-dark {
+        background: #2b2622;
+        border-color: #2b2622;
+      }
+
+      .on-dark .icon {
+        color: #ffb877;
+      }
+    </style>
+  </head>
+
+  <body>
+    <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="display: none">
+      <symbol id="ppf-step-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 3h12v18H6z" />
+        <path d="M12 3 6 9" stroke-dasharray="2 2" stroke-linecap="butt" opacity="0.55" />
+      </symbol>
+      <symbol id="ppf-step-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 9 12 3h6v18H6z" />
+        <path d="M6 9h6V3" />
+        <path d="m12 3 6 6" stroke-dasharray="2 2" stroke-linecap="butt" opacity="0.55" />
+      </symbol>
+      <symbol id="ppf-step-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 9 12 3l6 6v12H6z" />
+        <path d="M6 9h12" />
+        <path d="M12 9v12" stroke-dasharray="2 2" stroke-linecap="butt" opacity="0.55" />
+      </symbol>
+      <symbol id="ppf-step-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M15 3 9 9v12h6z" />
+        <path d="M12.5 5.5V21" stroke-dasharray="2 2" stroke-linecap="butt" opacity="0.55" />
+      </symbol>
+      <symbol id="ppf-step-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3 4 20l8-2.5 8 2.5z" />
+        <path d="M12 3v14.5" />
+      </symbol>
+      <symbol id="ppf-step-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20.5 3.5 14.5 20.5 10.5 13 3.5 9.5z" />
+        <path d="M20.5 3.5 10.5 13" />
+      </symbol>
+    </svg>
+
+    <main>
+      <header>
+        <h1>Paper plane fold</h1>
+        <p>
+          Six minimal line icons that walk a sheet of paper through to a finished plane. Dashed
+          lines are the next crease, solid lines are paper edges and folds already made.
+        </p>
+      </header>
+
+      <section>
+        <h2>The six steps</h2>
+        <div class="steps">
+          <div class="step">
+            <span class="num">1</span>
+            <svg class="icon"><use href="#ppf-step-1" /></svg>
+            <span class="label">Blank sheet, first crease</span>
+          </div>
+          <div class="step">
+            <span class="num">2</span>
+            <svg class="icon"><use href="#ppf-step-2" /></svg>
+            <span class="label">Fold one corner in</span>
+          </div>
+          <div class="step">
+            <span class="num">3</span>
+            <svg class="icon"><use href="#ppf-step-3" /></svg>
+            <span class="label">Both corners make a nose</span>
+          </div>
+          <div class="step">
+            <span class="num">4</span>
+            <svg class="icon"><use href="#ppf-step-4" /></svg>
+            <span class="label">Fold in half</span>
+          </div>
+          <div class="step">
+            <span class="num">5</span>
+            <svg class="icon"><use href="#ppf-step-5" /></svg>
+            <span class="label">Fold the wings out</span>
+          </div>
+          <div class="step">
+            <span class="num">6</span>
+            <svg class="icon"><use href="#ppf-step-6" /></svg>
+            <span class="label">Ready to fly</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="size">
+        <h2>Sizes</h2>
+        <div class="row">
+          <figure>
+            <svg class="icon s16"><use href="#ppf-step-3" /></svg>
+            <figcaption>16</figcaption>
+          </figure>
+          <figure>
+            <svg class="icon s24"><use href="#ppf-step-3" /></svg>
+            <figcaption>24</figcaption>
+          </figure>
+          <figure>
+            <svg class="icon s32"><use href="#ppf-step-3" /></svg>
+            <figcaption>32</figcaption>
+          </figure>
+          <figure>
+            <svg class="icon s48"><use href="#ppf-step-3" /></svg>
+            <figcaption>48</figcaption>
+          </figure>
+          <figure>
+            <svg class="icon s72"><use href="#ppf-step-3" /></svg>
+            <figcaption>72</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="tint">
+        <h2>Recolouring with currentColor</h2>
+        <div class="row">
+          <svg class="icon a"><use href="#ppf-step-6" /></svg>
+          <svg class="icon b"><use href="#ppf-step-6" /></svg>
+          <svg class="icon c"><use href="#ppf-step-6" /></svg>
+          <svg class="icon d"><use href="#ppf-step-6" /></svg>
+        </div>
+      </section>
+
+      <section>
+        <h2>On a dark surface</h2>
+        <div class="row on-dark">
+          <svg class="icon s48"><use href="#ppf-step-1" /></svg>
+          <svg class="icon s48"><use href="#ppf-step-2" /></svg>
+          <svg class="icon s48"><use href="#ppf-step-3" /></svg>
+          <svg class="icon s48"><use href="#ppf-step-4" /></svg>
+          <svg class="icon s48"><use href="#ppf-step-5" /></svg>
+          <svg class="icon s48"><use href="#ppf-step-6" /></svg>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

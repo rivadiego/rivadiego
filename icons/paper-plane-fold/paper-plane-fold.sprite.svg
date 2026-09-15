@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="display: none">
+  <symbol id="ppf-step-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <title>Step 1 - a blank sheet with the first corner crease</title>
+    <path d="M6 3h12v18H6z" />
+    <path d="M12 3 6 9" stroke-dasharray="2 2" stroke-linecap="butt" opacity="0.55" />
+  </symbol>
+  <symbol id="ppf-step-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <title>Step 2 - one corner folded to the centre line</title>
+    <path d="M6 9 12 3h6v18H6z" />
+    <path d="M6 9h6V3" />
+    <path d="m12 3 6 6" stroke-dasharray="2 2" stroke-linecap="butt" opacity="0.55" />
+  </symbol>
+  <symbol id="ppf-step-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <title>Step 3 - both corners folded into a nose</title>
+    <path d="M6 9 12 3l6 6v12H6z" />
+    <path d="M6 9h12" />
+    <path d="M12 9v12" stroke-dasharray="2 2" stroke-linecap="butt" opacity="0.55" />
+  </symbol>
+  <symbol id="ppf-step-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <title>Step 4 - folded in half along the spine</title>
+    <path d="M15 3 9 9v12h6z" />
+    <path d="M12.5 5.5V21" stroke-dasharray="2 2" stroke-linecap="butt" opacity="0.55" />
+  </symbol>
+  <symbol id="ppf-step-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <title>Step 5 - both wings folded out</title>
+    <path d="M12 3 4 20l8-2.5 8 2.5z" />
+    <path d="M12 3v14.5" />
+  </symbol>
+  <symbol id="ppf-step-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <title>Step 6 - the finished paper plane</title>
+    <path d="M20.5 3.5 14.5 20.5 10.5 13 3.5 9.5z" />
+    <path d="M20.5 3.5 10.5 13" />
+  </symbol>
+</svg>
