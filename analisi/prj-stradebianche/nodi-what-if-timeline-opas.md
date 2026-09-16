@@ -25,8 +25,12 @@
    se non aderiscono, il massimo teorico è **68,98%**. Il ramo "sotto il 90%" non è una coda di
    distribuzione: **è lo scenario centrale da pianificare**, e il 90% va trattato come l'upside.
 
-3. **Sotto il 90% non cambia solo la data del delisting: cambia la struttura giuridica
-   dell'operazione per 12-18 mesi.** MPS resta emittente quotato con minoranze del 10-33%, quindi:
+3. **Sotto il 90% non c'è uno stallo: c'è un binario lento.** Controllo, consolidamento e nomina del
+   CdA arrivano al settlement esattamente come nello scenario di pag. 4; a mancare sono solo le azioni
+   residue e il delisting, e lo strumento che le elimina senza il consenso delle minoranze diventa la
+   **fusione** (8-15 mesi, senza diritto di recesso perché il concambio è in azioni ISP quotate). Il
+   costo non è l'attesa: è che **cambia la struttura giuridica dell'operazione per 12-18 mesi** (par.
+   3.2). MPS resta emittente quotato con minoranze del 11-33%, quindi:
    ogni operazione infragruppo (trasferimento della quota AG, riorganizzazioni per il carve-out)
    diventa un'operazione con parti correlate con soglia di maggiore rilevanza al **2,5%** e parere
    vincolante di un comitato di indipendenti su cui siedono amministratori di lista di minoranza;
@@ -235,7 +239,62 @@ Passaggi verbatim che vincolano gli scenari:
 **Conclusione del nodo A**: non è un rischio di coda, è il ramo probabile. La pianificazione va
 costruita sul sotto-90% con il 90% come upside da massimizzare.
 
-### 3.2 La cascata degli esiti, con calendario
+### 3.2 Il sotto-90% non è uno stallo: è un binario lento
+
+Vale la pena dirlo esplicitamente, perché l'espressione "non si raggiunge la soglia" evoca un blocco che
+in realtà non c'è. **Il mancato raggiungimento del 90% non incide su nulla di ciò che ISP ottiene al
+settlement.** Alla Data di Pagamento, con una partecipazione anche solo del 67%, ISP:
+
+- acquisisce il **controllo di diritto** e la maggioranza dell'assemblea ordinaria;
+- **consolida** MPS dalla data di acquisizione (IFRS 10.B35: rileva il *potere* di nominare la
+  maggioranza dell'organo, non il fatto che il rinnovo sia già avvenuto — nel precedente MPS/Mediobanca
+  il controllo è stato riconosciuto dal 15 settembre 2025, con il nuovo consiglio nominato il 28 ottobre);
+- **nomina il nuovo CdA** e governa la banca;
+- se è sopra il 66,67%, ha la **maggioranza qualificata per deliberare la fusione**.
+
+Ciò che non ottiene sono due cose sole, ma pesanti: **le azioni residue** e **il delisting**. Sotto il
+90% non esiste alcuno strumento coattivo per rilevare le minoranze: né l'obbligo di acquisto (art. 108,
+c. 2) né il diritto di acquisto (art. 111) sono azionabili, e il socio che non ha aderito ha il diritto
+di restare. La conseguenza è che MPS resta un emittente quotato, con un socio al 67-89% e minoranze
+all'11-33%, **per il tempo necessario ad arrivare alla fusione**.
+
+**È la fusione lo strumento che elimina le minoranze senza il loro consenso.** Con l'efficacia della
+fusione le azioni MPS sono annullate e concambiate in azioni ISP per effetto di legge: le minoranze
+diventano azionisti ISP, MPS è cancellata e con essa la quotazione. Non serve il consenso dei soci di
+minoranza, non spetta loro il diritto di recesso (riceverebbero azioni ISP quotate su Euronext Milan,
+quindi non opera l'art. 2437-quinquies c.c.) e, una volta iscritto l'atto di fusione, l'invalidità della
+delibera non è più pronunciabile (art. 2504-quater c.c.). Serve però un percorso di **8-15 mesi**, le
+autorizzazioni e i due terzi del capitale rappresentato nelle assemblee straordinarie.
+
+Quindi, riassumendo la differenza fra i due rami:
+
+| | ≥90% | 67-89% |
+|---|---|---|
+| Controllo e consolidamento | dal settlement | **dal settlement, identico** |
+| Nomina del nuovo CdA | sì | **sì, identico** |
+| Passaggio al 100% | procedura congiunta, 4-8 settimane | fusione, 8-15 mesi |
+| Delisting | feb–mar 2027 | set 2027 – mar 2028 |
+| Strumento | art. 111 + art. 108 TUF | artt. 2501 e ss. c.c. + art. 57 TUB |
+| Consenso delle minoranze | non richiesto | non richiesto |
+| Esborso di cassa aggiuntivo | corrispettivo in azioni + €1 (nessuna *cash alternative*) | nessuno (nessun recesso) |
+
+**Il costo del ramo lento non è l'attesa in sé: è ciò che nel frattempo non si può fare in autonomia.**
+Per 8-15 mesi ogni operazione fra ISP e MPS è un'operazione con parti correlate con soglia di maggiore
+rilevanza al 2,5% e parere favorevole necessario di un comitato di soli indipendenti non correlati, su
+cui siedono per statuto consiglieri tratti da liste di minoranza. E le operazioni che servono a ISP sono
+esattamente quelle: trasferimento della quota AG a ISP Assicurazioni, riorganizzazioni per il carve-out,
+accordo di consolidamento fiscale. A questo si aggiungono il trattamento penalizzante delle minoranze
+nel CET1, la diluizione del beneficio Danish, il 25-30% dei dividendi che esce dal gruppo e la necessità
+di ridisegnare il remedy Unipol (par. 3.4).
+
+**Lo stallo vero, quello sì da temere, sta sotto il 66,67%** — cioè solo se ISP rinuncia alla Condizione
+Soglia (par. 3.3, ramo A4). Sopra quella soglia il percorso è lento ma certo; sotto, il delisting può
+diventare irraggiungibile e la struttura con minoranze rilevanti può cristallizzarsi a tempo
+indeterminato. Il caso Banco BPM Vita/Anima è l'illustrazione del limbo: offerta chiusa al 89,949% in
+aprile 2025, nessun delisting, nessuna delibera di fusione, e Anima ancora quotata 17 mesi dopo. Lì però
+il limbo è una scelta, non un'impossibilità.
+
+### 3.3 La cascata degli esiti, con calendario
 
 #### Ramo A1 — ≥90% alla chiusura del periodo di adesione
 
@@ -295,7 +354,7 @@ preferenza:
    riapertura può bastare. **È la leva a più alto rendimento e va decisa adesso**, perché il periodo di
    adesione di 37 giorni non lascia spazio a proroghe.
 2. **Proroga del Periodo di Adesione**: residuano ~3 giorni di borsa aperta entro il tetto dei 40.
-3. **Acquisti sul mercato post-settlement**: possibili ma con la trappola di pricing del par. 3.2;
+3. **Acquisti sul mercato post-settlement**: possibili ma con la trappola di pricing del par. 3.3;
    inoltre l'esercitabilità dell'art. 111 su un 90% raggiunto per soli acquisti di mercato non è
    testualmente pacifica e non risultano orientamenti Consob pubblicati.
 4. **Seconda OPA volontaria**: attenzione al nuovo **art. 102, c. 8, TUF** ("put up or shut up"): se
@@ -336,11 +395,18 @@ Note tecniche:
   pronunciabile; resta il risarcimento. Il contenzioso delle minoranze si sposta dall'impugnativa al
   danno, e la difesa si costruisce sulla documentazione del processo (parere del comitato OPC, fairness
   opinion, relazione dell'esperto), non sulla resistenza processuale.
-- **Aritmetica dei 2/3**: ISP delibera la fusione se detiene almeno 2/3 del capitale *rappresentato in
-  assemblea*. Con ISP al 70% e affluenza dell'85% del capitale, ISP pesa l'82% dei presenti: ampiamente
-  sopra. Con ISP al 68% e affluenza del 95%, pesa il 71,6%: ancora sopra. La soglia diventa critica
-  solo sotto il ~67% con affluenza molto alta (che è esattamente ciò che una minoranza organizzata
-  cercherebbe di produrre). **Sotto il 66,67% la fusione non è garantita**: è il motivo per cui la
+- **Aritmetica dei 2/3, ed è la ragione d'essere della Condizione Soglia**: nelle quotate l'assemblea
+  straordinaria delibera con il voto favorevole di almeno due terzi del capitale *rappresentato in
+  assemblea*. Se ISP detiene almeno il 66,67% del capitale, quella maggioranza è **garantita qualunque
+  sia l'affluenza**, perché i soci diversi da ISP non possono rappresentare più del 33,33%. È
+  esattamente per questo che la Condizione Soglia è fissata al 66,67% e non al 50% più un'azione: è la
+  soglia che rende certa la via della fusione anche nello scenario peggiore di mobilitazione delle
+  minoranze. **Sotto il 66,67% la fusione diventa invece una funzione dell'affluenza**: l'affluenza di
+  *break-even* è pari alla quota ISP divisa per 0,6667 (ISP al 60% → 90% di affluenza; ISP al 55% →
+  82,5%), e una minoranza organizzata farebbe precisamente della mobilitazione il proprio obiettivo.
+  All'assemblea MPS del 15 aprile 2026 l'affluenza è stata di circa il 65% del capitale, ma un'assemblea
+  di fusione contestata mobiliterebbe molto di più. **Sotto il 66,67% la fusione non è garantita**: è il
+  motivo per cui la
   Condizione Soglia è fissata lì, e il motivo per cui la rinuncia parziale alla Condizione Soglia va
   decisa con questa aritmetica alla mano, non solo con quella del consolidamento.
 
@@ -366,7 +432,7 @@ detenga la maggioranza dei diritti di voto in assemblea ordinaria.
   intermedia se la fusione slitta oltre i 12 mesi: riduce i costi di compliance e liquida in cassa una
   parte delle minoranze, ma va budgetato l'esborso del recesso (media dei prezzi dei 6 mesi).
 
-### 3.3 Su cosa variano gli scenari: le dimensioni di impatto
+### 3.4 Su cosa variano gli scenari: le dimensioni di impatto
 
 | # | Dimensione | ≥90% (A1) | Sotto il 90% (A2/A3) |
 |---|---|---|---|
@@ -799,7 +865,7 @@ Condizioni di Efficacia (iv) e (v). Presidi, in ordine di efficacia:
    stima 30-90 giorni è basata sulla struttura del procedimento.
 7. **Interazione fra minority interests e beneficio del Danish Compromise**: non risultano Q&A EBA né
    passaggi della Guida BCE su opzioni e discrezionalità che affrontino direttamente il punto. La
-   conclusione del par. 3.3 n. 4 è un'inferenza analitica costruita sul combinato degli artt. 49(1)(e)(v)
+   conclusione del par. 3.4 n. 4 è un'inferenza analitica costruita sul combinato degli artt. 49(1)(e)(v)
    e 84 CRR e del Report EBA di gennaio 2026: da sottoporre a parere.
 8. **Data di Pagamento** effettiva indicata nel Documento di Offerta e sua coerenza con la cascata di
    pag. 4.
