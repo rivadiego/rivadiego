@@ -42,9 +42,13 @@
    Unipol ad acquisire *"l'intero capitale di una entità giuridica bancaria, eventualmente identificata
    nello stesso Emittente"*, ed è subordinato *"all'adesione dell'Emittente all'Accordo Unipol"*.
    Entrambi i presupposti sono esposti ai due nodi: **l'"intero capitale" di MPS si può cedere solo
-   post-squeeze-out**, e **l'adesione di MPS all'Accordo richiede una delibera del CdA MPS**. Un
-   consiglio ostile o una quota di minoranze residue non ritardano un adempimento accessorio:
-   mettono a rischio l'esecuzione dell'impegno antitrust, che è condizione di efficacia dell'Offerta.
+   post-squeeze-out** (e cedere il solo pacchetto ISP di un MPS quotato farebbe scattare un'OPA
+   obbligatoria di Unipol ex art. 106, c. 1, TUF), e **l'adesione di MPS all'Accordo richiede una
+   delibera del CdA MPS**. Un consiglio ostile o una quota di minoranze residue non ritardano un
+   adempimento accessorio: mettono a rischio l'esecuzione dell'impegno antitrust, che è condizione di
+   efficacia dell'Offerta. Sotto il 90% si ricade sulla struttura **newco** e il calendario da negoziare
+   con l'AGCM — istruttoria approfondita avviata il 14 settembre 2026 — va costruito su quella
+   struttura, non su quella semplice (par. 3.5).
 
 5. **I due nodi non sono indipendenti: il 90% è anche il miglior rimedio al CdA che non si dimette.**
    Raggiunto il 90% ed eseguita la procedura congiunta, ISP arriva al 100% e MPS è revocata dalla
@@ -452,6 +456,106 @@ detenga la maggioranza dei diritti di voto in assemblea ordinaria.
 | 14 | Costi di quotazione e MAR | Cessano | Doppio perimetro MAR sugli stessi fatti (progetto di fusione, concambio, autorizzazioni) → protocollo di disclosure congiunta e registri insider coordinati; informativa periodica, 123-bis, 123-ter, contributi; poteri di Borsa Italiana sul flottante insufficiente |
 | 15 | Contenzioso minoranze | Assente | Con minoranze ≥2,5% l'**azione sociale di responsabilità ex art. 2393-bis c.c.** è attivabile; art. 2373 c.c. (voto determinante del socio in conflitto + danno anche potenziale); art. 2497 c.c. con onere di provare **vantaggi compensativi concreti, certi e quantificabili** (Cass. 16707/2004), senza necessità di preventiva escussione della eterodiretta (Cass. 29139/2017). Nella scalata a Mediobanca sono arrivati ~45 esposti alla Consob: il primo canale è amministrativo, non giudiziario |
 | 16 | Sostituzione degli organi | Con il 100% e MPS delistata, in giorni | 40 giorni di avviso + 25 di deposito liste + 21 di pubblicazione, con esito certo ma composizione non interamente controllata |
+
+### 3.5 Approfondimento: il remedy Unipol e il carve-out nei due rami
+
+È la dimensione in cui i due nodi si sommano, ed è l'unica in cui il ritardo non è solo un costo interno
+ma un **rischio di inadempimento verso l'Autorità**. Va tenuta distinta da tutte le altre.
+
+#### Cosa cambia: non l'impegno di Unipol, ma l'oggetto della compravendita
+
+L'impegno di Unipol è subordinato al perfezionamento dell'Offerta, all'adesione di MPS all'Accordo e alle
+autorizzazioni: **non è condizionato al raggiungimento del 90%**. Unipol quindi non "esce". Cambia però
+ciò che si può vendere:
+
+- **Ramo ≥90%**: MPS, delistata e interamente posseduta, conserva il marchio e può essere *essa stessa*
+  l'"entità giuridica bancaria" il cui intero capitale viene ceduto, come previsto in via principale
+  dall'Accordo. È la struttura più semplice in assoluto: si cede un pacchetto azionario, non si
+  costruisce una banca.
+- **Ramo sotto-90%**: quella strada è **preclusa**, per due ragioni indipendenti. (i) L'"intero capitale"
+  di MPS non è nella disponibilità di ISP finché esistono minoranze. (ii) Anche volendo cedere il solo
+  pacchetto ISP, Unipol supererebbe il 30% di un emittente quotato e sarebbe tenuta a **un'OPA
+  obbligatoria** ex art. 106, c. 1, TUF sulle azioni MPS residue: un esito che nessuna delle due parti
+  vuole e che trasformerebbe il remedy in un'operazione cash di dimensioni non previste. Si ricade
+  quindi sulla struttura alternativa già contemplata dall'Accordo ("*eventualmente* identificata nello
+  stesso Emittente"): **una newco bancaria** in cui conferire le 635 filiali e le strutture centrali,
+  con il marchio, e di cui cedere il 100%.
+
+#### Quanto costa, in tempo, la struttura newco
+
+La newco **non deve attendere la fusione**: può essere costituita e alimentata mentre MPS è ancora
+quotata, purché il CdA MPS deliberi. Il ritardo è quindi di mesi, non di un anno — a condizione che la
+governance collabori. Gli anelli della catena:
+
+1. **Delibera di adesione di MPS all'Accordo Unipol** (necessaria in ogni scenario).
+2. **Autorizzazione all'attività bancaria per il veicolo** (art. 14 TUB, istruttoria BCE): iter per sua
+   natura pluri-mensile. *Da verificare se Unipol possa apportare un veicolo già autorizzato: dopo la
+   cessione di Unipol Banca a BPER nel 2019 il gruppo non dispone di una banca controllata, e BPER è
+   partecipata al ~30% ma non controllata.*
+3. **Conferimento o cessione del compendio** con lo strumento dell'art. 58 TUB (cessione di aziende, rami
+   d'azienda e rapporti giuridici individuabili in blocco, con pubblicità collettiva verso creditori e
+   debitori): è il binario che rende gestibile il trasferimento di 635 filiali. In alternativa la
+   scissione, che però richiede l'assemblea straordinaria e i due terzi.
+4. **Consultazioni sindacali ex art. 47 L. 428/1990** su un perimetro di 635 filiali e delle strutture
+   centrali: è il passaggio più sottovalutato in termini di calendario.
+5. **Carve-out IT, migrazione e separazione operativa**, necessari perché il veicolo possa "operare come
+   banca in modo indipendente" secondo la lettera dell'Accordo.
+
+#### Il vincolo che governa tutto: la scadenza degli impegni antitrust
+
+Il calendario non lo decidono ISP e Unipol, lo decide la decisione dell'AGCM. **L'istruttoria
+approfondita è stata avviata il 14 settembre 2026**, quindi il pacchetto di rimedi e i relativi termini
+si stanno negoziando adesso. Nella prassi dei remedy la cessione ha una **scadenza vincolante** e, in
+caso di sforamento, l'intervento di un *divestiture trustee* che vende senza vincolo di prezzo minimo.
+
+> **Raccomandazione**: la tempistica da negoziare con l'AGCM va costruita sullo scenario **newco**, non
+> su quello della cessione del pacchetto MPS, perché il sotto-90% è il ramo probabile (par. 3.1).
+> Assumere termini calibrati sulla struttura semplice significa accettare oggi un rischio di
+> inadempimento, o una vendita tramite trustee a condizioni peggiori, per un evento la cui probabilità
+> non dipende da ISP. Da segnalare che ISP ha rappresentato all'Autorità che **445 delle 635 filiali sono
+> già identificate in via definitiva** e le restanti **190 solo in via preliminare**: è su queste ultime
+> che si concentrerà il negoziato, ed è l'occasione per allineare perimetro e termini.
+
+#### Il rischio specifico sul prezzo, nel ramo sotto-90%
+
+Se il venditore è MPS (struttura preferibile: la cessione a Unipol è verso un terzo e quindi **non** è
+un'operazione con parti correlate, mentre farebbe passare ISP come venditore intermedio la trasformerebbe
+in un'OPC di maggiore rilevanza), allora MPS incassa i €3-3,5 miliardi e **il 25-30% di quel valore
+appartiene economicamente alle minoranze**. Due conseguenze:
+
+- il **CdA MPS ha già messo a verbale pubblicamente**, nel comunicato del 16 luglio 2026, che la
+  valorizzazione della rete ceduta è inferiore ai multipli medi osservati per le banche italiane e che
+  la disaggregazione degli sportelli indebolirebbe il marchio. In un MPS quotato quella posizione,
+  ripresa da consiglieri di lista di minoranza e da un comitato che chiederà una fairness opinion, è
+  una carta documentale già scritta contro l'operazione;
+- non è un veto — in consiglio decide la maggioranza — ma è **materiale per un'azione ex art. 2497 c.c.
+  o ex art. 2393-bis c.c.** (soglia del 2,5%, banalmente raggiungibile con minoranze a doppia cifra), in
+  cui l'onere di provare vantaggi compensativi concreti, certi e quantificabili ricade su ISP. Presidio:
+  processo competitivo documentato o, in mancanza, fairness opinion indipendente e motivazione analitica
+  ex art. 2497-ter c.c.
+
+#### Opzione alternativa da valutare
+
+Cedere il compendio **direttamente in un veicolo bancario già esistente della controparte** — nella
+logica dell'operazione, BPER, dove Unipol è poco sotto il 30% e dove la banca acquisita è comunque
+destinata ad approdare — eviterebbe di costruire e autorizzare una banca standalone. Il vincolo è di
+natura antitrust, non societaria: l'Autorità valuta l'**idoneità dell'acquirente a ripristinare la
+concorrenza** nei mercati locali interessati, e trasferire filiali a un operatore già presente e forte
+negli stessi bacini può non rimediare la concentrazione. È probabilmente la ragione per cui la struttura
+prevede una banca autonoma operante sotto il marchio MPS. Da esplorare con i consulenti antitrust
+prima di irrigidire il perimetro.
+
+#### E la voce "finalizzazione carve-out entro aprile-maggio"?
+
+Va letta separatamente dalla cessione. Quella milestone riguarda **le analisi e la mappatura del
+perimetro**, e non dipende dal nodo A: dipende dall'accesso ai dati e alla collaborazione delle
+strutture MPS, cioè **dal nodo B**. È il motivo per cui l'art. 61, c. 4, TUB (par. 6) è il presidio più
+rilevante anche su questo capitolo. Conseguenza contabile: se al primo consolidato (31 marzo 2027) il
+veicolo non esiste e il perimetro non è definito, la classificazione **IFRS 5** del compendio
+difficilmente è sostenibile — manca la disponibilità per la vendita immediata nelle condizioni attuali —
+e il carve-out resta gestibile solo in *disclosure*. L'eccezione al termine dei dodici mesi prevista da
+IFRS 5.9 e B1(a) copre i ritardi imposti da **terzi** (tipicamente le autorizzazioni), non quelli
+riconducibili al venditore.
 
 ---
 
