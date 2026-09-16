@@ -919,8 +919,21 @@ giorni** (per sincronizzare con lo squeeze-out).
 
 | | **CdA si dimette** | **CdA non si dimette** |
 |---|---|---|
-| **≥90%** | **Q1 — Scenario di pag. 4, migliorato.** Nuovo CdA 25 febbraio 2027 (o t+20 con convocazione anticipata); delisting e 100% fra fine febbraio e marzo 2027. Carve-out e cessione a Unipol eseguibili come disegnati. Nessuna OPC, nessuna minoranza nel CET1, Danish pieno | **Q2 — Gestibile.** Il ritardo nella nomina (fino a t+90) è in buona parte assorbito dal delisting: raggiunto il 100%, ISP può sostituire gli organi in giorni tramite assemblea totalitaria ex art. 2366, c. 4, c.c. Il vero costo è la **finestra interinale** in cui un consiglio a poteri pieni decide su Unipol, carve-out e bilancio FY2026 |
-| **Sotto il 90%** | **Q3 — Ramo probabile.** MPS quotata per 8-15 mesi. Nuovo CdA il 25 febbraio 2027 ma **con 2-3 consiglieri di lista di minoranza**, che siederanno nel comitato OPC chiamato a pronunciarsi sul trasferimento AG e sulle riorganizzazioni del carve-out. Delisting via fusione fra set 2027 e mar 2028. Remedy Unipol da ridisegnare (newco anziché "intero capitale" di MPS) | **Q4 — Da evitare attivamente.** Consiglio ostile a poteri pieni + minoranze + comitato OPC non allineato + nessun delisting. Nuovo CdA fra marzo e giugno 2027, e il consiglio che lo sostituisce include comunque seggi di minoranza. L'adesione di MPS all'Accordo Unipol e le delibere di conferimento restano ostaggio della governance della target, con **rischio di sforamento della scadenza degli impegni antitrust** |
+| **≥90%** | **Q1 — Scenario di pag. 4, migliorato.** Nuovo CdA 25 febbraio 2027, o t+20 con convocazione anticipata. Delisting e 100% fra fine febbraio e marzo 2027. Carve-out eseguibile come disegnato (si estrae ciò che si trattiene, si cede il pacchetto MPS con il marchio). Nessuna OPC, nessuna minoranza nel CET1, Danish pieno, un solo perimetro MAR | **Q2 — Gestibile, ma con un buco di governo.** Sui tempi della nomina cambia poco: il vincolo dei 40 giorni opera identico, e il ritardo si materializza solo in caso di ostruzionismo sulla convocazione (fino a t+90). Il costo vero è la **finestra interinale**: un consiglio in carica a poteri pieni decide su Unipol, carve-out e bilancio FY2026, e l'art. 61 c. 4 TUB dà dati e vigilanza ma non il comando sui dipendenti. Il delisting però **chiude il problema a valle**: al 100% gli organi si sostituiscono in giorni ex art. 2366 c. 4 c.c. |
+| **Sotto il 90%** | **Q3 — Ramo probabile.** MPS quotata per 8-15 mesi. Nuovo CdA il 25 febbraio 2027 ma **con 2-3 consiglieri di lista di minoranza**, che siederanno nel comitato OPC chiamato a pronunciarsi sul trasferimento AG e sulle riorganizzazioni del carve-out. Delisting via fusione fra set 2027 e mar 2028. Remedy Unipol da ridisegnare: newco con licenza bancaria, perché l'"intero capitale" di MPS non è cedibile e Unipol sopra il 30% sarebbe tenuta a un'OPA obbligatoria | **Q4 — Da evitare attivamente.** Si cumulano tutte le criticità: consiglio ostile a poteri pieni, minoranze, comitato OPC non allineato, nessun delisting che chiuda il problema a valle. Nuovo CdA fra marzo e giugno 2027, e il consiglio che lo sostituisce include comunque seggi di minoranza. L'adesione di MPS all'Accordo Unipol e le delibere di conferimento restano ostaggio della governance della target, con **rischio di sforamento della scadenza degli impegni antitrust** e intervento del *divestiture trustee* |
+
+Le stesse quattro caselle lette per dimensione decisionale:
+
+| Dimensione | Q1 (≥90%, dimissioni) | Q2 (≥90%, no dimissioni) | Q3 (<90%, dimissioni) | Q4 (<90%, no dimissioni) |
+|---|---|---|---|---|
+| Nuovo CdA | 25 feb 2027 (o t+20) | 25 feb – apr 2027 | 25 feb 2027 | mar – giu 2027 |
+| Composizione del CdA | interamente ISP | interamente ISP | 2-3 seggi di minoranza | 2-3 seggi di minoranza |
+| Governo del business nell'interim | pieno | **assente per 50-90 gg** | pieno | **assente per 50-90 gg** |
+| Delisting e 100% | feb–mar 2027 | feb–mar 2027 | set 2027 – mar 2028 (fusione) | set 2027 – mar 2028 (fusione) |
+| Disciplina OPC sulle operazioni infragruppo | non applicabile | non applicabile | applicabile, soglia 2,5% | applicabile, comitato non allineato |
+| Struttura del remedy Unipol | cessione del pacchetto MPS | cessione del pacchetto MPS | newco + licenza bancaria | newco, con delibere a rischio |
+| Minoranze nel CET1 e Danish | nessun impatto | nessun impatto | cap art. 84 CRR, Danish diluito | idem |
+| Rischio dominante | esecuzione | **perdita di governo** | **tempo e OPC** | **inadempimento antitrust** |
 
 ### 5.2 Il collegamento fra i due nodi
 
