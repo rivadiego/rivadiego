@@ -12,7 +12,7 @@
 
 ## 0. Executive summary
 
-**Cinque messaggi.**
+**Sei messaggi.**
 
 1. **La soglia rilevante è il 90%, non il 95%.** Il D.Lgs. 27 marzo 2026 n. 47 (in vigore dal 29 aprile
    2026) ha abbassato al 90% la soglia del diritto di acquisto ex art. 111 TUF. Oggi il 90% è la soglia
@@ -54,9 +54,18 @@
    Raggiunto il 90% ed eseguita la procedura congiunta, ISP arriva al 100% e MPS è revocata dalla
    quotazione: cadono le liste di minoranza, la riserva statutaria di seggi, il voto di lista come
    vincolo di fatto, e la sostituzione degli organi diventa un atto che si compie in giorni anziché in
-   40+. Sotto il 90% con un CdA ostile si cumulano invece tutti i ritardi: nuovo CdA realisticamente
-   **fra marzo e giugno 2027** anziché il 25 febbraio, con un comitato OPC che dovrà poi esprimersi
-   sulle operazioni che servono a ISP.
+   40+. Sotto il 90% con un CdA ostile si cumulano invece tutti i ritardi: nuovo CdA fra marzo e giugno
+   2027 anziché il 25 febbraio **se si arriva all'ostruzionismo sulla convocazione**, con un comitato
+   OPC che dovrà poi esprimersi sulle operazioni che servono a ISP.
+
+6. **Sul nodo B, il costo vero non è il calendario assembleare: è la perdita di governo del business
+   nella finestra interinale.** Il vincolo che fissa la data del nuovo consiglio è il preavviso di 40
+   giorni, e opera identico con o senza dimissioni: fra i due scenari il differenziale di tempo è quasi
+   nullo, purché *qualcuno* convochi. Ciò che invece cambia in modo non recuperabile è che, finché il
+   consiglio MPS è in carica, **l'art. 61, c. 4, TUB garantisce dati e collaborazione di vigilanza ma
+   non crea una linea di comando sui dipendenti**: l'organo in carica resta l'unica fonte legittima di
+   istruzioni e il datore di lavoro. Per 50-90 giorni ISP avrebbe la proprietà di MPS senza governarla
+   (par. 4.3-bis).
 
 **La raccomandazione operativa più immediata** (par. 7): assoggettare volontariamente l'Offerta alla
 riapertura dei termini ex art. 40-bis, c. 1, Reg. Emittenti. Oggi il comunicato 102 dichiara che
@@ -470,8 +479,14 @@ ciò che si può vendere:
 
 - **Ramo ≥90%**: MPS, delistata e interamente posseduta, conserva il marchio e può essere *essa stessa*
   l'"entità giuridica bancaria" il cui intero capitale viene ceduto, come previsto in via principale
-  dall'Accordo. È la struttura più semplice in assoluto: si cede un pacchetto azionario, non si
-  costruisce una banca.
+  dall'Accordo. Attenzione a come funziona in concreto: in questo ramo **il carve-out va nella direzione
+  opposta a quella intuitiva**. Non si estrae ciò che si vende, si estrae **ciò che si trattiene** —
+  le circa 625 filiali che restano a ISP, Mediobanca e il resto del perimetro — lasciando dentro MPS le
+  635 filiali, le strutture centrali e il marchio; poi si cede il 100% delle azioni MPS. È la struttura
+  più semplice in assoluto perché l'estrazione è un'operazione **interamente infragruppo** in una
+  società al 100%: nessuna disciplina sulle parti correlate, nessuna minoranza da tutelare, nessun
+  profilo ex art. 2497 c.c. E l'atto finale è la cessione di un pacchetto azionario, non la costruzione
+  di una banca.
 - **Ramo sotto-90%**: quella strada è **preclusa**, per due ragioni indipendenti. (i) L'"intero capitale"
   di MPS non è nella disponibilità di ISP finché esistono minoranze. (ii) Anche volendo cedere il solo
   pacchetto ISP, Unipol supererebbe il 30% di un emittente quotato e sarebbe tenuta a **un'OPA
@@ -500,6 +515,14 @@ governance collabori. Gli anelli della catena:
    centrali: è il passaggio più sottovalutato in termini di calendario.
 5. **Carve-out IT, migrazione e separazione operativa**, necessari perché il veicolo possa "operare come
    banca in modo indipendente" secondo la lettera dell'Accordo.
+
+Da notare, per non sovrastimare il delta: i punti 3, 4 e 5 esistono **in entrambi i rami**, perché anche
+nel ramo ≥90% bisogna estrarre da MPS le circa 625 filiali trattenute, con lo stesso art. 58 TUB e le
+stesse consultazioni sindacali. Il costo incrementale specifico del ramo sotto-90% è quindi concentrato
+in tre voci: **l'autorizzazione bancaria del veicolo**, il fatto di dover eseguire l'operazione **dentro
+una società quotata con minoranze** (con quanto ne segue sul prezzo, v. oltre) e **l'impossibilità di
+chiudere con una semplice cessione di azioni**, che obbliga a rinegoziare con Unipol l'oggetto del
+contratto.
 
 #### Il vincolo che governa tutto: la scadenza degli impegni antitrust
 
@@ -579,9 +602,14 @@ nomine approvate con **8 voti su 15**, con 5 contrari e 2 astenuti. Il 25 marzo 
 Brancadoro e Alessandro Caltagirone in sostituzione di Palermo e Vivaldi, attingendo ai primi non
 eletti della lista di minoranza come prescritto dall'art. 15, c. 10, lett. b), dello statuto.
 
-> **Lettura operativa**: il consiglio è strutturalmente **spaccato**. Uno scenario di rifiuto compatto e
-> prolungato di dimettersi è meno probabile di quanto sarebbe in un board omogeneo. E, come si vede al
-> par. 4.2, **non servono 15 dimissioni: ne bastano 8**.
+> **Lettura operativa**: il consiglio è strutturalmente **spaccato**, e questo ha due implicazioni di
+> segno opposto che vanno tenute insieme. Da un lato, un rifiuto compatto e prolungato di dimettersi è
+> meno probabile che in un board omogeneo, e — come si vede al par. 4.2 — **non servono 15 dimissioni,
+> ne bastano 8**. Dall'altro, **non si può assumere che quelle 8 siano disponibili**: le linee di
+> frattura del consiglio non coincidono con la linea pro/contro l'Offerta, alcuni consiglieri della
+> lista che ha vinto ad aprile si sono poi collocati fra i contrari all'operazione, e le cooptazioni di
+> inizio settembre hanno spostato ulteriormente gli equilibri. Il conteggio va rifatto nominativamente
+> e aggiornato, non dedotto dall'appartenenza alle liste dell'aprile 2026.
 
 ### 4.2 La clausola statutaria che governa tutto: art. 15, c. 10
 
@@ -615,27 +643,87 @@ eletti della lista di minoranza come prescritto dall'art. 15, c. 10, lett. b), d
   ritardo" ex art. 2406, c. 1, c.c. e fa scattare il dovere del Collegio Sindacale. **La strategia
   negoziale va quindi calibrata su 8 dimissioni, non su 15.**
 
-### 4.3 Il rischio più serio non è il ritardo: è la prorogatio a poteri pieni
+### 4.3 Il rischio più serio non è il ritardo: è che il consiglio conservi poteri pieni
 
 > **Cass. civ., Sez. I, 4 giugno 2003, n. 8912** — "il secondo comma dell'art. 2385 c.c. non è norma
 > limitativa delle loro attribuzioni nel periodo di proroga; deve pertanto escludersi che i compiti di
 > gestione di detti amministratori siano circoscritti, in tale periodo, agli atti di ordinaria
 > amministrazione."
 
-Il CdA MPS dimissionario-ma-in-carica **conserva pieni poteri di ordinaria e straordinaria
-amministrazione**. Nella finestra fra il settlement e l'insediamento del nuovo consiglio esso decide su:
-adesione all'Accordo Unipol, perimetro e struttura del carve-out, esecuzione della Fusione MB,
-trasferimento della quota AG, schemi di bilancio FY2026, retention del management, presentazione della
-propria lista ex art. 147-ter.1 TUF. E in quella finestra **non opera più né la passivity rule dell'art.
-104 TUF né la protezione delle Condizioni di Efficacia (iv) e (v)**, che si esauriscono alla Data di
-Pagamento.
+Qui va tenuta una distinzione che è facile perdere, e che cambia gli argomenti disponibili:
 
-**Asimmetria da tenere a mente**: la prorogatio dell'art. 2385 c.c. copre solo dimissioni e scadenza,
-**non la revoca**. Per Trib. Roma, 13 novembre 2018, l'amministratore revocato non conserva poteri in
+- **se si dimette la maggioranza**, il consiglio è dimissionario e resta in carica in *prorogatio* fino
+  alla ricostituzione, **con poteri pieni** di ordinaria e straordinaria amministrazione (Cass.
+  8912/2003). Il vincolo è funzionale: gli amministratori in proroga devono adoperarsi per la
+  tempestiva ricostituzione dell'organo, e condotte ostruzionistiche sono contestabili ex art. 2392
+  c.c.;
+- **se la maggioranza non si dimette, non c'è alcuna prorogatio**: il consiglio è semplicemente **in
+  carica a pieno titolo**, con un mandato che scade nella primavera 2029 e senza alcuna attenuazione
+  dei propri poteri né alcun dovere di "adoperarsi per la ricostituzione". È lo scenario in cui gli
+  argomenti fondati sulla prorogatio **non sono utilizzabili**, ed è un errore ricorrente assumere il
+  contrario.
+
+In entrambi i casi, nella finestra fra il settlement e l'insediamento del nuovo consiglio l'organo in
+carica decide su: adesione all'Accordo Unipol, perimetro e struttura del carve-out, esecuzione della
+Fusione MB, trasferimento della quota AG, schemi di bilancio FY2026, retention del management,
+presentazione della propria lista ex art. 147-ter.1 TUF. E in quella finestra **non opera più né la
+passivity rule dell'art. 104 TUF né la protezione delle Condizioni di Efficacia (iv) e (v)**, che si
+esauriscono alla Data di Pagamento.
+
+**Asimmetria sulla revoca**: la prorogatio dell'art. 2385 c.c. copre solo dimissioni e scadenza, **non
+la revoca**. Per Trib. Roma, 13 novembre 2018, l'amministratore revocato non conserva poteri in
 prorogatio e si applica l'ultimo comma dell'art. 2386 c.c. → se si revocano *tutti* gli amministratori
 senza nominare contestualmente i sostituti, la gestione interinale passa al **Collegio Sindacale con
 soli poteri di ordinaria amministrazione**: per una *significant institution* è uno scenario da evitare.
 **Revoca e nomina devono stare nello stesso ordine del giorno e nella stessa assemblea.**
+
+### 4.3-bis Il limite della direzione e coordinamento: non è una linea di comando sui dipendenti
+
+Questo è il punto operativo più sottovalutato dell'intero nodo B, ed è dove l'art. 61, c. 4, TUB (par. 6)
+smette di funzionare.
+
+L'esercizio della direzione e coordinamento, per la capogruppo di un gruppo bancario, **è un dovere e non
+solo un diritto**: l'art. 61, c. 1, TUB stabilisce che la capogruppo *"esercita le funzioni di direzione
+e coordinamento del gruppo bancario, assicurando, tra l'altro, il rispetto delle norme che disciplinano
+l'attività bancaria su base consolidata"*, e l'assoggettamento va reso pubblico ex art. 2497-bis c.c.
+Non è quindi in discussione la legittimazione di ISP a impartire direttive dal giorno del settlement.
+
+Il problema è un altro e va distinto con precisione:
+
+| Oggetto | L'art. 61, c. 4, TUB funziona? |
+|---|---|
+| Dati, flussi per il consolidato, reporting package, informativa di vigilanza, ICAAP/ILAAP, accesso delle funzioni di controllo di gruppo | **Sì.** È esattamente il contenuto della norma: gli amministratori della controllata *"sono tenuti a fornire ogni dato e informazione"* e a prestare *"la necessaria collaborazione per il rispetto delle norme sulla vigilanza su base consolidata"* |
+| Scelte di business, campagne commerciali, pricing, obiettivi di rete, decisioni sul personale | **No.** Il potere dell'art. 61, c. 4, è funzionalmente circoscritto all'esecuzione delle istruzioni di vigilanza nell'interesse della stabilità del gruppo; la giurisprudenza ha censurato regolamenti di gruppo che ne ricavavano un potere di direzione più ampio |
+
+La conseguenza pratica è netta. **Finché il consiglio MPS è in carica, l'organo amministrativo e l'AD
+restano l'unica fonte legittima di istruzioni per i dipendenti e i dirigenti di MPS, e sono il datore di
+lavoro.** Un responsabile di rete che eseguisse istruzioni provenienti da ISP contro le direttive del
+proprio consiglio non commetterebbe un illecito verso ISP — non ha alcun rapporto con ISP — ma
+un'inadempienza verso il proprio datore di lavoro, con esposizione disciplinare e, nei casi gravi, a un
+licenziamento che sarebbe **giuridicamente valido**. Il rischio, in altre parole, **ricadrebbe sulle
+persone di MPS, non su ISP**.
+
+Ne seguono tre indicazioni operative:
+
+1. **Non chiedere ai dirigenti MPS di bypassare il proprio consiglio.** Nella finestra interinale i
+   contatti diretti fra le linee di business vanno incanalati in richieste formali all'organo
+   amministrativo di MPS, o nel perimetro "dati e vigilanza" dell'art. 61, c. 4, TUB, che è coperto.
+   Tutto ciò che è gestione va chiesto al consiglio, non alla struttura.
+2. **Chi subisse conseguenze per aver collaborato va tutelato**, e l'atto ritorsivo va documentato: un
+   provvedimento disciplinare o un licenziamento adottato per punire la collaborazione con l'azionista
+   di controllo è un atto ostile che incide sulla continuità operativa e alimenta sia la responsabilità
+   ex art. 2392 c.c. sia il dossier di giusta causa per la revoca (par. 4.4). Il rimedio è risarcitorio
+   e successivo, non impeditivo: non evita il danno, lo fa pagare.
+3. **La leva vera, nella finestra interinale, è il dossier documentale, non il comando.** Verbalizzare
+   le richieste, i rifiuti e i relativi effetti serve a tre cose insieme: costituire la giusta causa,
+   fondare l'eventuale azione di responsabilità e dare al supervisore evidenza di un problema di
+   governance nella controllata di cui ISP ha già chiesto conto.
+
+**Corollario di pianificazione**: l'asimmetria fra i due scenari non è nei tempi della nomina (par. 4.4)
+ma nella **capacità di governare il business** fra il settlement e l'insediamento. Se il consiglio si
+dimette, ISP indirizza di fatto la gestione attraverso chi resta in carica con il consenso di questi.
+Se non si dimette, ISP nella sostanza **non governa MPS per 50-90 giorni**, pur avendone la proprietà:
+è questo, e non il calendario assembleare, il costo da mettere a piano.
 
 ### 4.4 Il playbook: cosa fare, in che ordine, con quali tempi
 
@@ -656,6 +744,17 @@ Assumo settlement al giorno **S** (6 gennaio 2027 nella timeline di pag. 4) e IS
 
 Assemblea **t+42 / t+60**; con la convocazione anticipata, **t+15 / t+20**. Costo: *severance* negoziato
 entro i cap prudenziali. Rischio esecutivo e reputazionale basso.
+
+> **Il collo di bottiglia è la convocazione, non la rimozione.** Va detto con chiarezza perché
+> determina l'intera economia del nodo B: il vincolo che fissa la data del nuovo consiglio è il
+> **preavviso di 40 giorni** dell'art. 125-bis, c. 2, TUF, più i 25 giorni di deposito e i 21 di
+> pubblicazione delle liste che corrono al suo interno. Quel vincolo opera **identico** sia che il
+> consiglio si dimetta sia che vada revocato, e in entrambi i casi gli amministratori restano in carica
+> fino all'assemblea. Ne segue che **il differenziale di tempo fra dimissioni e revoca è quasi nullo
+> — a una condizione: che qualcuno convochi**. Il ritardo dei percorsi B, C1 e C2 non nasce dalla
+> revoca in sé, ma dal tempo speso per ottenere la delibera di convocazione (il "senza ritardo"
+> dell'art. 2367, c. 1, la via sindacale, il decreto del tribunale). È su quel singolo atto, non sulla
+> rimozione, che va concentrata la pressione negoziale e, se serve, il contenzioso.
 
 #### Percorso B — Il CdA non si dimette ma, sollecitato, convoca
 
@@ -685,9 +784,17 @@ Due chiarimenti importanti:
 **Il costo della revoca.** La giusta causa non è condizione di validità: la revoca è sempre efficace,
 e la giusta causa serve solo a escludere il risarcimento (art. 2383, c. 3, c.c.). Tre punti fermi:
 
-1. **Il cambio di controllo non è giusta causa.** Cass. 21495/2020 ha confermato la condanna al
-   risarcimento in un caso di mutamento dell'assetto proprietario del socio di riferimento, in assenza
-   di fatti che compromettano il *pactum fiduciae*.
+1. **Il cambio di controllo, da solo, non è giusta causa.** Cass. 21495/2020 ha confermato la condanna
+   al risarcimento in un caso di mutamento dell'assetto proprietario del socio di riferimento, in
+   assenza di fatti che compromettano il *pactum fiduciae*. **Ma le condotte concrete tenute nel corso
+   dell'offerta sono un'altra cosa**, e sono il terreno su cui la giusta causa può effettivamente
+   essere costruita: la nozione accolta dalla Cassazione è quella di "circostanze sopravvenute, anche
+   non integranti inadempimento, che pregiudicano l'affidamento" nell'amministratore. Il dossier va
+   costruito su fatti verificabili e imputabili, per esempio: misure difensive deliberate dopo il
+   settlement, atti ritorsivi verso strutture che collaborano con l'azionista (par. 4.3-bis), rifiuto
+   di fornire dati in violazione dell'art. 61, c. 4, TUB, ritardo ingiustificato nella convocazione
+   dell'assemblea richiesta ex art. 2367 c.c. Il combinato "cambio di controllo **più** condotte
+   ostruzionistiche documentate" è difendibile; il solo cambio di controllo no.
 2. **La giusta causa non può essere addotta dopo.** Principio di immodificabilità delle ragioni
    (Cass. 23557/2008; 2037/2018; 21495/2020): le ragioni devono essere esplicitate in assemblea e
    risultare a verbale. La decisione su *cosa* verbalizzare va presa **prima**.
@@ -787,6 +894,15 @@ presente in assemblea, anche chi ha votato altre liste o si è astenuto).
 | **E** Art. 2393, c. 5 | teoricamente immediato | — | molto alto | **molto alto** |
 | **F** Art. 2409 c.c. | non disponibile | — | — | precluso ex art. 70, c. 7, TUB |
 
+Va letta con l'avvertenza del par. 4.4: **l'intero scarto fra il percorso A e i percorsi B, C1 e C2 è
+imputabile al tempo necessario a ottenere la delibera di convocazione**, non alla rimozione degli
+amministratori. Se il consiglio, pur non dimettendosi, convoca senza far perdere tempo — che è
+l'esito più probabile, perché il rifiuto di convocare espone personalmente gli amministratori — i
+percorsi A e B **convergono sostanzialmente sulla stessa data**. Il differenziale va quindi presentato
+come un rischio condizionato, non come un ritardo atteso. Resta invece **non recuperabile**, e
+indipendente dal calendario assembleare, la perdita di governo del business nella finestra interinale
+(par. 4.3-bis).
+
 **Nessun precedente italiano documentato** di rifiuto compatto e prolungato di dimettersi da parte del
 CdA di una banca quotata dopo un'acquisizione di controllo. Nei casi reali le tempistiche effettive
 settlement → nuovo board sono state: BPER/Carige **12 giorni** (acquisto negoziato con assemblea già
@@ -849,11 +965,15 @@ Condizioni di Efficacia (iv) e (v). Presidi, in ordine di efficacia:
    *"La capogruppo emana disposizioni alle componenti del gruppo […]. Gli amministratori delle società
    del gruppo sono tenuti a fornire ogni dato e informazione per l'emanazione delle disposizioni e la
    necessaria collaborazione per il rispetto delle norme sulla vigilanza su base consolidata."* È la
-   leva **più efficace e meno traumatica**: trasforma il rifiuto di collaborare da inadempienza verso
-   l'azionista in violazione di una norma di vigilanza, con esposizione ex art. 2392 c.c., rilievi di
-   vigilanza e ricadute sulla valutazione di idoneità degli esponenti. Attenzione al limite funzionale:
-   la giurisprudenza ha censurato regolamenti di gruppo che ne ricavavano un potere di direzione più
-   ampio delle istruzioni di vigilanza; **non è una delega in bianco** a dirigere la controllata.
+   leva **più efficace e meno traumatica sul perimetro che copre**: trasforma il rifiuto di collaborare
+   da inadempienza verso l'azionista in violazione di una norma di vigilanza, con esposizione ex art.
+   2392 c.c., rilievi di vigilanza e ricadute sulla valutazione di idoneità degli esponenti. **Ma quel
+   perimetro è dati, reporting e compliance di vigilanza, non la gestione**: la giurisprudenza ha
+   censurato regolamenti di gruppo che ne ricavavano un potere di direzione più ampio delle istruzioni
+   di vigilanza, e la norma non crea alcuna linea di comando sui dipendenti della controllata. **Non è
+   una delega in bianco a dirigere MPS**: per questo aspetto vale integralmente il par. 4.3-bis, ed è
+   un errore impostare la fase interinale assumendo che l'art. 61, c. 4, risolva anche il governo del
+   business.
 2. **Lettera formale al CdA e al Collegio Sindacale** al giorno S, con: richiamo ai doveri ex art. 2392
    c.c., perimetro degli atti non rientranti nell'ordinaria amministrazione su cui ISP si attende
    astensione o consultazione preventiva, richiesta di accesso per l'integration planning sotto
