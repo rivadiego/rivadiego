@@ -1,4 +1,4 @@
-"""Pull activities from a source into the local database."""
+"""Pull activities and daily vital signs from a source into the local database."""
 
 from __future__ import annotations
 
@@ -6,11 +6,13 @@ import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from .db import Database
 from .normalize import normalize_activity
-from .sources import ActivitySource
+from .sources import ActivitySource, SourceError
+from .wellness import sync_wellness
+from .workouts import link_garmin_activities
 
 HISTORY_COMPLETE = "history_complete"
 LAST_SYNC_AT = "last_sync_at"
@@ -32,6 +34,8 @@ class SyncResult:
     total: int
     last_sync_at: str
     history_complete: bool
+    wellness_days: int = 0
+    warning: str | None = None
 
 
 def utc_now_iso() -> str:
@@ -46,11 +50,13 @@ class Syncer:
         *,
         page_size: int = 50,
         pause_s: float = 0.0,
+        wellness_days: int = 14,
     ) -> None:
         self.source = source
         self.db = db
         self.page_size = page_size
         self.pause_s = pause_s
+        self.wellness_days = wellness_days
         self._lock = threading.Lock()
         self._new = 0
         self._updated = 0
@@ -60,14 +66,16 @@ class Syncer:
         *,
         full: bool = False,
         max_pages: int | None = None,
+        max_wellness_days: int | None = None,
         progress: Callable[[int, int], None] | None = None,
+        today: date | None = None,
     ) -> SyncResult:
-        """Sync newest-first pages of activities.
+        """Sync newest-first pages of activities, then the daily vital signs.
 
         A normal sync stops at the first page that brings nothing new. Until the whole history has
         been imported once, it also resumes the backfill of older activities where the previous
         sync stopped; `max_pages` caps the Garmin requests made by a single run. `full` re-reads
-        every page.
+        every page. Vital signs failing doesn't lose the activities: it becomes a warning.
         """
         if not self._lock.acquire(blocking=False):
             raise SyncInProgress("Sincronizzazione già in corso")
@@ -84,6 +92,21 @@ class Syncer:
             if reached_end:
                 self.db.set_meta(HISTORY_COMPLETE, "1")
             last_sync_at = utc_now_iso()
+            wellness_days, warning = 0, None
+            try:
+                wellness_days = sync_wellness(
+                    self.source,
+                    self.db,
+                    today=today or date.today(),
+                    days=self.wellness_days,
+                    max_fetch=max_wellness_days,
+                    synced_at=last_sync_at,
+                    pause_s=self.pause_s / 2,
+                )
+            except SourceError as exc:
+                warning = f"Attività aggiornate, ma non i parametri vitali: {exc}"
+            self.source.after_sync(self.db)
+            link_garmin_activities(self.db)
             self.db.set_meta(LAST_SYNC_AT, last_sync_at)
             return SyncResult(
                 mode=self.source.mode,
@@ -93,6 +116,8 @@ class Syncer:
                 total=self.db.count_activities(),
                 last_sync_at=last_sync_at,
                 history_complete=self.db.get_meta(HISTORY_COMPLETE) == "1",
+                wellness_days=wellness_days,
+                warning=warning,
             )
         finally:
             self._lock.release()

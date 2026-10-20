@@ -1,8 +1,10 @@
-"""Where activities come from: the real Garmin Connect account or a demo generator."""
+"""Where data comes from: the real Garmin Connect account or a demo generator."""
 
 from __future__ import annotations
 
 import random
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any, NamedTuple, Protocol
@@ -11,10 +13,12 @@ from garminconnect import (
     Garmin,
     GarminConnectAuthenticationError,
     GarminConnectConnectionError,
+    GarminConnectNotFoundError,
     GarminConnectTooManyRequestsError,
 )
 
 from .config import Settings
+from .db import Database
 
 TOKEN_FILE = "garmin_tokens.json"
 
@@ -52,6 +56,16 @@ class ActivitySource(Protocol):
         """Return a page of raw Garmin activity payloads, newest first."""
         ...
 
+    def fetch_wellness(self, day: str) -> dict[str, Any]:
+        """Raw daily payloads keyed "summary", "sleep", "hrv" and "readiness" (missing parts may be None)."""
+        ...
+
+    def fetch_weights(self, start: str, end: str) -> dict[str, float]:
+        """Body weight in kg by date, for the weigh-ins between two dates."""
+        ...
+
+    def after_sync(self, db: Database) -> None: ...
+
 
 class GarminSource:
     """Garmin Connect account, authenticated with the tokens saved by `python -m coach_connect login`."""
@@ -68,9 +82,49 @@ class GarminSource:
     def begin_sync(self) -> None:
         return None
 
+    def after_sync(self, db: Database) -> None:
+        return None
+
     def fetch_activities(self, start: int, limit: int) -> list[dict[str, Any]]:
-        try:
+        with self._errors():
             activities = self._get_client().get_activities(start, limit)
+        return activities if isinstance(activities, list) else []
+
+    def fetch_wellness(self, day: str) -> dict[str, Any]:
+        with self._errors():
+            client = self._get_client()
+            calls: dict[str, Callable[[], Any]] = {
+                "summary": lambda: client.get_user_summary(day),
+                "sleep": lambda: client.get_sleep_data(day),
+                "hrv": lambda: client.get_hrv_data(day),
+                "readiness": lambda: client.get_training_readiness(day),
+            }
+            raw: dict[str, Any] = {}
+            for key, call in calls.items():
+                try:
+                    raw[key] = call()
+                except GarminConnectNotFoundError:
+                    # Not every watch records every metric (HRV, readiness…).
+                    raw[key] = None
+        return raw
+
+    def fetch_weights(self, start: str, end: str) -> dict[str, float]:
+        with self._errors():
+            try:
+                data = self._get_client().get_body_composition(start, end) or {}
+            except GarminConnectNotFoundError:
+                return {}
+        weights = {}
+        for item in data.get("dateWeightList") or []:
+            grams = item.get("weight")
+            if item.get("calendarDate") and isinstance(grams, int | float) and grams > 0:
+                weights[item["calendarDate"]] = round(grams / 1000, 2)
+        return weights
+
+    @contextmanager
+    def _errors(self) -> Iterator[None]:
+        try:
+            yield
         except GarminConnectAuthenticationError as exc:
             self._client = None
             raise GarminNotAuthenticated(
@@ -83,7 +137,6 @@ class GarminSource:
             ) from exc
         except GarminConnectConnectionError as exc:
             raise GarminUnavailable(f"Garmin Connect non raggiungibile: {exc}") from exc
-        return activities if isinstance(activities, list) else []
 
     def _get_client(self) -> Garmin:
         if self._client is None:
@@ -137,8 +190,11 @@ def _planned_kind(day: date) -> str | None:
             return None
 
 
+DEMO_BODYWEIGHT_KG = 70.0
+
+
 class DemoSource:
-    """Generates realistic fake activities so the app can be tried without a Garmin account.
+    """Generates realistic fake data so the app can be tried without a Garmin account.
 
     The week mirrors a 3 gym + 2 runs hybrid plan. History is derived from today's date, so
     restarts on the same day return identical data. Every sync after the first one "records"
@@ -155,6 +211,68 @@ class DemoSource:
 
     def is_ready(self) -> bool:
         return True
+
+    def after_sync(self, db: Database) -> None:
+        from .workouts import seed_demo_workouts
+
+        seed_demo_workouts(db, bodyweight=DEMO_BODYWEIGHT_KG)
+
+    def fetch_wellness(self, day: str) -> dict[str, Any]:
+        current = date.fromisoformat(day)
+        rng = random.Random(current.toordinal())
+        hard_day_before = _planned_kind(current - timedelta(days=1)) in {"quality_run", "long_run"}
+        hrv = rng.uniform(48, 64) - (6 if hard_day_before else 0)
+        sleep_s = rng.uniform(6.0, 8.1) * 3600
+        sleep_score = round(min(95, 40 + sleep_s / 3600 * 6 + rng.uniform(-6, 6)))
+        resting_hr = round(rng.uniform(47, 52) + (2 if hard_day_before else 0))
+        wake_battery = round(min(100, 35 + sleep_score * 0.6 + rng.uniform(-8, 8)))
+        readiness = round(max(15, min(98, wake_battery * 0.7 + (hrv - 45) * 1.2 + rng.uniform(-5, 5))))
+        day_share = min(1.0, datetime.now().hour / 22) if current == date.today() else 1.0
+        status = "BALANCED" if hrv >= 50 else "UNBALANCED"
+        level = "HIGH" if readiness >= 75 else "MODERATE" if readiness >= 50 else "LOW" if readiness >= 25 else "POOR"
+        return {
+            "summary": {
+                "totalSteps": round(rng.uniform(7000, 14000) * day_share),
+                "activeKilocalories": round(rng.uniform(450, 1100) * day_share),
+                "restingHeartRate": resting_hr,
+                "minHeartRate": resting_hr - 3,
+                "maxHeartRate": round(rng.uniform(150, 178)),
+                "averageStressLevel": round(rng.uniform(18, 38)),
+                "bodyBatteryHighestValue": wake_battery,
+                "bodyBatteryLowestValue": round(max(5, wake_battery - rng.uniform(40, 70) * day_share)),
+                "bodyBatteryAtWakeTime": wake_battery,
+                "moderateIntensityMinutes": round(rng.uniform(10, 50) * day_share),
+                "vigorousIntensityMinutes": round(rng.uniform(0, 40) * day_share),
+                "avgWakingRespirationValue": round(rng.uniform(13, 16), 1),
+                "averageSpo2": round(rng.uniform(94, 98)),
+            },
+            "sleep": {
+                "dailySleepDTO": {
+                    "sleepTimeSeconds": round(sleep_s),
+                    "deepSleepSeconds": round(sleep_s * rng.uniform(0.15, 0.22)),
+                    "remSleepSeconds": round(sleep_s * rng.uniform(0.18, 0.25)),
+                    "lightSleepSeconds": round(sleep_s * 0.55),
+                    "awakeSleepSeconds": round(rng.uniform(300, 1800)),
+                    "sleepScores": {"overall": {"value": sleep_score}},
+                },
+                "avgOvernightHrv": round(hrv),
+                "hrvStatus": status,
+                "restingHeartRate": resting_hr,
+            },
+            "hrv": {"hrvSummary": {"lastNightAvg": round(hrv), "weeklyAvg": round(rng.uniform(52, 57)), "status": status}},
+            "readiness": [{"score": readiness, "level": level, "timestamp": f"{day}T06:30:00.0"}],
+        }
+
+    def fetch_weights(self, start: str, end: str) -> dict[str, float]:
+        weights = {}
+        day = date.fromisoformat(start)
+        while day <= date.fromisoformat(end):
+            if day.weekday() == 0:
+                rng = random.Random(day.toordinal() + 1)
+                weeks = (day - date(2026, 1, 5)).days // 7
+                weights[day.isoformat()] = round(DEMO_BODYWEIGHT_KG - 1 + 0.03 * weeks + rng.uniform(-0.3, 0.3), 1)
+            day += timedelta(days=1)
+        return weights
 
     def begin_sync(self) -> None:
         self._syncs += 1

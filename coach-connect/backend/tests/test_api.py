@@ -73,6 +73,73 @@ def test_sync_without_garmin_login_explains_what_to_do(tmp_path):
     assert client.get("/api/status").json()["garmin_ready"] is False
 
 
+def test_log_a_workout_and_see_it_in_the_feed(tmp_path):
+    client = client_for(tmp_path, FakeSource([make_raw(0)]))
+    client.post("/api/sync")
+    body = {
+        "plan_workout": "B",
+        "started_at": "2026-10-20T07:10:00+02:00",
+        "duration_min": 55,
+        "exercises": [
+            {"exercise_id": "weighted_chin_up", "sets": [{"weight_kg": 10, "reps": 5}, {"weight_kg": 2, "reps": 6}]},
+            {"exercise_id": "plank", "sets": [{"seconds": 50}]},
+        ],
+    }
+
+    created = client.post("/api/workouts", json=body)
+    assert created.status_code == 201
+    workout = created.json()
+    assert workout["name"] == "Workout B · Pull"
+    assert workout["start_time_local"] == "2026-10-20T07:10:00"
+    assert workout["start_time_utc"] == "2026-10-20T05:10:00Z"
+
+    feed = client.get("/api/feed").json()
+    # The workout (05:10 UTC) starts ten minutes after the Garmin run (05:00 UTC).
+    assert [(i["key"], i["name"]) for i in feed["items"]] == [
+        (f"manual:{workout['id']}", "Workout B · Pull"),
+        ("garmin:1000000", "Attività 0"),
+    ]
+    assert client.get(f"/api/workouts/{workout['id']}").json()["set_count"] == 3
+
+    assert client.delete(f"/api/workouts/{workout['id']}").status_code == 204
+    assert client.get(f"/api/workouts/{workout['id']}").status_code == 404
+
+
+def test_workout_validation(tmp_path):
+    client = client_for(tmp_path, FakeSource([]))
+
+    unknown = client.post("/api/workouts", json={"exercises": [{"exercise_id": "nope", "sets": [{"reps": 5}]}]})
+    empty = client.post("/api/workouts", json={"exercises": []})
+    negative = client.post(
+        "/api/workouts", json={"exercises": [{"exercise_id": "plank", "sets": [{"seconds": -5}]}]}
+    )
+
+    assert unknown.status_code == 422 and "nope" in unknown.json()["detail"]
+    assert empty.status_code == 422
+    assert negative.status_code == 422
+
+
+def test_plan_exercises_and_wellness_endpoints(tmp_path):
+    client = client_for(tmp_path, DemoSource(), demo=True)
+    synced = client.post("/api/sync").json()
+    assert synced["wellness_days"] == 6
+
+    plan = client.get("/api/plan").json()
+    assert set(plan["workouts"]) == {"A", "B"}
+    assert len(plan["days"]) == 7 and sum(d["is_today"] for d in plan["days"]) == 1
+    assert plan["workouts"]["A"]["exercises"][0]["suggestion"]["sets"]
+
+    catalog = client.get("/api/exercises").json()
+    assert "Petto" in catalog["groups"]
+    assert any(e["id"] == "incline_barbell_bench" for e in catalog["exercises"])
+
+    days = client.get("/api/wellness", params={"days": 3}).json()["days"]
+    assert days and days[0]["sleep_seconds"]
+
+    feed = client.get("/api/feed", params={"limit": 200}).json()["items"]
+    assert any(i["source"] == "manual" and i["garmin_linked"] for i in feed)
+
+
 def test_garmin_rate_limit_is_reported(tmp_path):
     class Throttled(FakeSource):
         def fetch_activities(self, start, limit):

@@ -56,6 +56,7 @@ def cmd_sync(settings: Settings, *, full: bool) -> int:
         Database(settings.db_path),
         page_size=settings.sync_page_size,
         pause_s=0.5 if source.mode == "live" else 0.0,
+        wellness_days=settings.wellness_days,
     )
 
     def progress(scanned: int, new: int) -> None:
@@ -68,6 +69,9 @@ def cmd_sync(settings: Settings, *, full: bool) -> int:
         print(f"\n{exc}", file=sys.stderr)
         return 1
     print(f"\nFatto: {result.new} nuove, {result.updated} aggiornate, {result.total} attività nel database.")
+    print(f"Parametri vitali aggiornati: {result.wellness_days} giorni.")
+    if result.warning:
+        print(result.warning, file=sys.stderr)
     return 0
 
 

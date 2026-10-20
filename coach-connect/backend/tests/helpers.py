@@ -34,6 +34,7 @@ class FakeSource:
     def __init__(self, activities: list[dict[str, Any]]) -> None:
         self.activities = activities
         self.calls: list[tuple[int, int]] = []
+        self.wellness_calls: list[str] = []
 
     def is_ready(self) -> bool:
         return True
@@ -41,6 +42,16 @@ class FakeSource:
     def begin_sync(self) -> None:
         return None
 
+    def after_sync(self, db: Any) -> None:
+        return None
+
     def fetch_activities(self, start: int, limit: int) -> list[dict[str, Any]]:
         self.calls.append((start, limit))
         return [dict(a) for a in self.activities[start : start + limit]]
+
+    def fetch_wellness(self, day: str) -> dict[str, Any]:
+        self.wellness_calls.append(day)
+        return {}
+
+    def fetch_weights(self, start: str, end: str) -> dict[str, float]:
+        return {}
