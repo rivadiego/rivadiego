@@ -86,30 +86,13 @@ export type WorkoutTemplate = {
   abs_rest: string;
 };
 
-export type PlanDay = {
-  date: string;
-  weekday: string;
-  is_today: boolean;
-  done: boolean;
-  key: string;
-  title: string;
-  short: string;
-  kind: 'gym' | 'run' | 'rest';
-  description?: string;
-};
-
-export type Phase = { from_week: number; to_week: number | null; name: string; text: string };
-
 export type Plan = {
   name: string;
   subtitle: string;
-  start_date: string;
-  week: number;
-  phase: Phase;
-  phases: Phase[];
-  today: PlanDay;
-  next_gym_workout: 'A' | 'B';
-  days: PlanDay[];
+  /** A and B alternate: the one after the last logged workout. */
+  next_workout: 'A' | 'B';
+  last_workout: { key: 'A' | 'B'; title: string; date: string } | null;
+  done_today: boolean;
   workouts: Record<'A' | 'B', WorkoutTemplate>;
   rules: { title: string; text: string }[];
   nutrition: string[];
@@ -167,7 +150,10 @@ export type Wellness = {
 
 export type ChatMessage = { id: number; role: 'user' | 'assistant'; content: string; created_at: string };
 
-export type ChatState = { messages: ChatMessage[]; coach_ai: boolean };
+/** Who answers: a local Ollama model (free), a paid API, or offline rules. */
+export type CoachStatus = { mode: 'ollama' | 'api' | 'offline'; model: string | null };
+
+export type ChatState = { messages: ChatMessage[]; coach: CoachStatus };
 
 export class ApiError extends Error {
   constructor(
@@ -245,7 +231,8 @@ export const api = {
   deleteWorkout: (id: number) => request<null>(`/api/workouts/${id}`, { method: 'DELETE' }),
   wellness: (days = 14) => request<{ days: Wellness[] }>(`/api/wellness?days=${days}`),
   chat: () => request<ChatState>('/api/chat'),
-  sendChat: (content: string) => request<ChatState>('/api/chat', post({ content }), 90_000),
+  // A local model on a laptop can take a while to answer.
+  sendChat: (content: string) => request<ChatState>('/api/chat', post({ content }), 200_000),
   clearChat: () => request<null>('/api/chat', { method: 'DELETE' }),
 };
 

@@ -18,7 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { RichText } from '@/components/rich-text';
 import { colors, maxContentWidth, radius, spacing } from '@/constants/theme';
-import { api, describeError, type ChatMessage, type Wellness } from '@/lib/api';
+import { api, describeError, type ChatMessage, type CoachStatus, type Wellness } from '@/lib/api';
 import { formatSleep } from '@/lib/format';
 
 const SUGGESTIONS = [
@@ -62,7 +62,7 @@ export default function CoachScreen() {
   const scrollRef = useRef<ScrollViewInstance>(null);
   const pendingId = useRef(-1);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [coachAi, setCoachAi] = useState(true);
+  const [coach, setCoach] = useState<CoachStatus | null>(null);
   const [today, setToday] = useState<Wellness | undefined>();
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -77,7 +77,7 @@ export default function CoachScreen() {
             return;
           }
           setMessages(chat.messages);
-          setCoachAi(chat.coach_ai);
+          setCoach(chat.coach);
           setToday(wellness.days[0]);
           setError(null);
         })
@@ -103,7 +103,7 @@ export default function CoachScreen() {
     try {
       const result = await api.sendChat(content);
       setMessages((list) => [...list.filter((m) => m.id !== pending.id), ...result.messages]);
-      setCoachAi(result.coach_ai);
+      setCoach(result.coach);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     } catch (e) {
       const { title, message } = describeError(e);
@@ -153,11 +153,16 @@ export default function CoachScreen() {
               ))}
             </ScrollView>
           )}
-          {!coachAi && (
+          {coach?.mode === 'offline' && (
             <Text style={styles.offline}>
-              Coach offline: risposte automatiche dai tuoi dati finché non colleghi un modello AI nel backend.
+              Coach offline: risposte automatiche dai tuoi dati. Per il coach AI gratuito installa Ollama sul computer
+              del backend (vedi README).
             </Text>
           )}
+          {coach?.mode === 'ollama' && (
+            <Text style={styles.online}>Coach AI locale · {coach.model} · gratis, i dati restano sul tuo computer</Text>
+          )}
+          {coach?.mode === 'api' && <Text style={styles.online}>Coach AI · {coach.model}</Text>}
         </View>
 
         <ScrollView
@@ -288,6 +293,11 @@ const styles = StyleSheet.create({
   },
   offline: {
     color: colors.warning,
+    fontSize: 12,
+    lineHeight: 17,
+  },
+  online: {
+    color: colors.success,
     fontSize: 12,
     lineHeight: 17,
   },

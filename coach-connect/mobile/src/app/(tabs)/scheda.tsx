@@ -7,61 +7,37 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StateView } from '@/components/state-view';
 import { colors, maxContentWidth, radius, spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
-import { api, describeError, type Plan, type PlanDay, type TemplateExercise, type WorkoutTemplate } from '@/lib/api';
+import { api, describeError, type Plan, type TemplateExercise, type WorkoutTemplate } from '@/lib/api';
 import { formatDay, formatSet } from '@/lib/format';
 
 const logWorkout = (key: 'A' | 'B') => router.push({ pathname: '/log', params: { template: key } });
 
-function TodayCard({ plan }: { plan: Plan }) {
-  const today = plan.today;
-  const gymKey = today.kind === 'gym' && !today.done && (today.key === 'A' || today.key === 'B') ? today.key : plan.next_gym_workout;
+function NextWorkoutCard({ plan, now }: { plan: Plan; now: Date }) {
+  const next = plan.workouts[plan.next_workout];
+  const last = plan.last_workout;
   return (
-    <View style={styles.todayCard}>
-      <Text style={styles.overline}>Oggi · {today.weekday}</Text>
-      <Text style={styles.todayTitle}>{today.title}</Text>
-      {today.description ? <Text style={styles.muted}>{today.description}</Text> : null}
-      {today.done ? (
+    <View style={styles.nextCard}>
+      <Text style={styles.overline}>Prossimo allenamento</Text>
+      <Text style={styles.nextTitle}>{next.title}</Text>
+      <Text style={styles.muted}>{next.focus}</Text>
+      {last && plan.done_today ? (
         <View style={styles.doneRow}>
           <SymbolView name={{ ios: 'checkmark.circle.fill', android: 'check_circle', web: 'check_circle' }} size={18} tintColor={colors.success} />
-          <Text style={styles.doneLabel}>Fatto</Text>
+          <Text style={styles.doneLabel}>Oggi hai fatto il {last.title}</Text>
         </View>
-      ) : null}
-      {today.kind !== 'gym' || today.done ? (
-        <Text style={styles.muted}>Prossima palestra: {plan.workouts[gymKey].title}</Text>
-      ) : null}
+      ) : (
+        <Text style={styles.muted}>
+          {last
+            ? `Ultimo: ${last.title}, ${formatDay(last.date, now).toLowerCase()}`
+            : 'Ancora nessun allenamento registrato: si parte dal Workout A.'}
+        </Text>
+      )}
       <Pressable
         accessibilityRole="button"
-        onPress={() => logWorkout(gymKey)}
-        style={({ pressed }) => [today.kind === 'gym' && !today.done ? styles.primaryButton : styles.secondaryButton, pressed && styles.pressed]}>
-        <Text style={today.kind === 'gym' && !today.done ? styles.primaryLabel : styles.secondaryLabel}>
-          Registra {plan.workouts[gymKey].title}
-        </Text>
+        onPress={() => logWorkout(plan.next_workout)}
+        style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}>
+        <Text style={styles.primaryLabel}>Registra {next.title}</Text>
       </Pressable>
-    </View>
-  );
-}
-
-function WeekStrip({ days }: { days: PlanDay[] }) {
-  return (
-    <View style={styles.week}>
-      {days.map((day) => (
-        <View key={day.date} style={styles.weekDay}>
-          <Text style={[styles.weekLabel, day.is_today && styles.weekLabelToday]}>{day.weekday.slice(0, 3)}</Text>
-          <View
-            style={[
-              styles.weekDot,
-              day.kind === 'rest' && styles.weekDotRest,
-              day.done && styles.weekDotDone,
-              day.is_today && styles.weekDotToday,
-            ]}>
-            {day.done ? (
-              <SymbolView name={{ ios: 'checkmark', android: 'check', web: 'check' }} size={14} weight="bold" tintColor={colors.onAccent} />
-            ) : (
-              <Text style={[styles.weekShort, day.kind === 'rest' && styles.weekShortRest]}>{day.short}</Text>
-            )}
-          </View>
-        </View>
-      ))}
     </View>
   );
 }
@@ -165,32 +141,9 @@ export default function PlanScreen() {
   } else {
     body = (
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.content}>
-        <TodayCard plan={plan} />
-        <WeekStrip days={plan.days} />
+        <NextWorkoutCard plan={plan} now={now} />
         <WorkoutSection workout={plan.workouts.A} now={now} />
         <WorkoutSection workout={plan.workouts.B} now={now} />
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Fasi</Text>
-          {plan.phases.map((phase) => {
-            const current = phase.name === plan.phase.name;
-            return (
-              <View key={phase.name} style={styles.phaseRow}>
-                <Text style={[styles.phaseWeeks, current && styles.phaseCurrent]}>
-                  Sett. {phase.from_week}
-                  {phase.to_week ? `-${phase.to_week}` : '+'}
-                </Text>
-                <View style={styles.phaseText}>
-                  <Text style={[styles.exerciseName, current && styles.phaseCurrent]}>
-                    {phase.name}
-                    {current ? ' · in corso' : ''}
-                  </Text>
-                  <Text style={styles.muted}>{phase.text}</Text>
-                </View>
-              </View>
-            );
-          })}
-        </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Come si lavora</Text>
@@ -219,9 +172,7 @@ export default function PlanScreen() {
       <View style={styles.column}>
         <View style={styles.header}>
           <Text style={styles.title}>Scheda</Text>
-          <Text style={styles.summary}>
-            {plan ? `Settimana ${plan.week} · ${plan.phase.name} · ${plan.subtitle}` : 'Caricamento…'}
-          </Text>
+          <Text style={styles.summary}>{plan ? plan.subtitle : 'Caricamento…'}</Text>
         </View>
         {body}
       </View>
@@ -264,7 +215,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xxl * 2,
   },
-  todayCard: {
+  nextCard: {
     gap: spacing.sm,
     padding: spacing.lg,
     borderRadius: radius.lg,
@@ -279,7 +230,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
     textTransform: 'uppercase',
   },
-  todayTitle: {
+  nextTitle: {
     color: colors.text,
     fontSize: 24,
     fontWeight: '800',
@@ -305,65 +256,6 @@ const styles = StyleSheet.create({
     color: colors.onAccent,
     fontSize: 15,
     fontWeight: '700',
-  },
-  secondaryButton: {
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-    borderRadius: radius.pill,
-    backgroundColor: colors.surfaceRaised,
-    marginTop: spacing.xs,
-  },
-  secondaryLabel: {
-    color: colors.text,
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  week: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  weekDay: {
-    alignItems: 'center',
-    gap: spacing.xs,
-    flex: 1,
-  },
-  weekLabel: {
-    color: colors.textMuted,
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-  weekLabelToday: {
-    color: colors.text,
-  },
-  weekDot: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surfaceRaised,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  weekDotRest: {
-    backgroundColor: 'transparent',
-  },
-  weekDotDone: {
-    backgroundColor: colors.accent,
-    borderColor: colors.accent,
-  },
-  weekDotToday: {
-    borderColor: colors.text,
-    borderWidth: 2,
-  },
-  weekShort: {
-    color: colors.text,
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  weekShortRest: {
-    color: colors.textMuted,
   },
   section: {
     gap: spacing.sm,
@@ -464,24 +356,6 @@ const styles = StyleSheet.create({
   absName: {
     color: colors.text,
     fontSize: 14,
-  },
-  phaseRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    paddingVertical: spacing.xs,
-  },
-  phaseWeeks: {
-    width: 64,
-    color: colors.textMuted,
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  phaseText: {
-    flex: 1,
-    gap: 2,
-  },
-  phaseCurrent: {
-    color: colors.accent,
   },
   rule: {
     gap: 2,

@@ -74,9 +74,7 @@ export default function LogWorkoutScreen() {
           return;
         }
         const requested = params.template === 'A' || params.template === 'B' ? params.template : null;
-        const { today } = loadedPlan;
-        const todayKey = !today.done && (today.key === 'A' || today.key === 'B') ? today.key : null;
-        const initial = requested ?? todayKey ?? loadedPlan.next_gym_workout;
+        const initial = requested ?? loadedPlan.next_workout;
         setPlan(loadedPlan);
         setCatalog(loadedCatalog);
         setTemplate(initial);
