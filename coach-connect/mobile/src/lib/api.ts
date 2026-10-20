@@ -3,7 +3,9 @@ import { Platform } from 'react-native';
 
 import type { Sport } from '@/lib/sports';
 
-export type Activity = {
+export type FeedItem = {
+  key: string;
+  source: 'garmin' | 'manual';
   id: number;
   name: string;
   sport: Sport;
@@ -12,20 +14,23 @@ export type Activity = {
   start_time_local: string | null;
   start_time_utc: string | null;
   duration_s: number | null;
-  moving_duration_s: number | null;
   distance_m: number | null;
   elevation_gain_m: number | null;
   avg_speed_mps: number | null;
   avg_hr: number | null;
   max_hr: number | null;
   calories: number | null;
-  training_load: number | null;
-  aerobic_te: number | null;
   location: string | null;
+  plan_workout: 'A' | 'B' | null;
+  exercise_count: number | null;
+  set_count: number | null;
+  volume_kg: number | null;
+  /** A logged workout also recorded by the watch: heart rate and duration come from Garmin. */
+  garmin_linked: boolean;
 };
 
-export type ActivityPage = {
-  items: Activity[];
+export type FeedPage = {
+  items: FeedItem[];
   total: number;
   limit: number;
   offset: number;
@@ -41,7 +46,128 @@ export type SyncResult = {
   total: number;
   last_sync_at: string;
   history_complete: boolean;
+  wellness_days: number;
+  warning: string | null;
 };
+
+export type Measure = 'reps' | 'seconds';
+
+export type SetValues = {
+  weight_kg: number | null;
+  reps: number | null;
+  seconds?: number | null;
+  note?: string | null;
+};
+
+export type TemplateExercise = {
+  exercise_id: string;
+  name: string;
+  group: string;
+  equipment: string;
+  measure: Measure;
+  scheme: 'rpt' | 'straight' | 'circuit';
+  scheme_label: string;
+  rep_range: [number, number] | null;
+  rest_s: number;
+  main: boolean;
+  cue: string;
+  last: SetValues[];
+  last_date: string | null;
+  suggestion: { message: string; progressed: boolean; sets: SetValues[]; warmup: SetValues[] };
+};
+
+export type WorkoutTemplate = {
+  key: 'A' | 'B';
+  title: string;
+  focus: string;
+  exercises: TemplateExercise[];
+  abs: TemplateExercise[];
+  abs_rounds: string;
+  abs_rest: string;
+};
+
+export type PlanDay = {
+  date: string;
+  weekday: string;
+  is_today: boolean;
+  done: boolean;
+  key: string;
+  title: string;
+  short: string;
+  kind: 'gym' | 'run' | 'rest';
+  description?: string;
+};
+
+export type Phase = { from_week: number; to_week: number | null; name: string; text: string };
+
+export type Plan = {
+  name: string;
+  subtitle: string;
+  start_date: string;
+  week: number;
+  phase: Phase;
+  phases: Phase[];
+  today: PlanDay;
+  next_gym_workout: 'A' | 'B';
+  days: PlanDay[];
+  workouts: Record<'A' | 'B', WorkoutTemplate>;
+  rules: { title: string; text: string }[];
+  nutrition: string[];
+  bodyweight_kg: number | null;
+};
+
+export type Exercise = { id: string; name: string; group: string; equipment: string; measure: Measure };
+
+export type ExerciseCatalog = { groups: string[]; exercises: Exercise[] };
+
+export type WorkoutDetail = {
+  id: number;
+  name: string;
+  plan_workout: 'A' | 'B' | null;
+  start_time_local: string;
+  start_time_utc: string;
+  duration_s: number | null;
+  notes: string | null;
+  garmin_activity_id: number | null;
+  avg_hr: number | null;
+  max_hr: number | null;
+  calories: number | null;
+  exercises: { position: number; exercise_id: string; name: string; measure: Measure; sets: SetValues[] }[];
+  set_count: number;
+  volume_kg: number;
+};
+
+export type NewWorkout = {
+  plan_workout: 'A' | 'B' | null;
+  started_at: string;
+  notes: string | null;
+  exercises: {
+    exercise_id: string;
+    sets: { weight_kg: number | null; reps: number | null; seconds: number | null }[];
+  }[];
+};
+
+export type Wellness = {
+  date: string;
+  sleep_seconds: number | null;
+  sleep_score: number | null;
+  hrv_last_night_ms: number | null;
+  hrv_weekly_avg_ms: number | null;
+  hrv_status: string | null;
+  resting_hr: number | null;
+  body_battery_high: number | null;
+  body_battery_low: number | null;
+  body_battery_wake: number | null;
+  stress_avg: number | null;
+  steps: number | null;
+  readiness_score: number | null;
+  readiness_level: string | null;
+  weight_kg: number | null;
+};
+
+export type ChatMessage = { id: number; role: 'user' | 'assistant'; content: string; created_at: string };
+
+export type ChatState = { messages: ChatMessage[]; coach_ai: boolean };
 
 export class ApiError extends Error {
   constructor(
@@ -82,6 +208,7 @@ async function request<T>(path: string, init: RequestInit = {}, timeoutMs = 30_0
       signal: controller.signal,
       headers: {
         Accept: 'application/json',
+        ...(init.body ? { 'Content-Type': 'application/json' } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
     });
@@ -105,11 +232,21 @@ async function request<T>(path: string, init: RequestInit = {}, timeoutMs = 30_0
   return body as T;
 }
 
+const post = (body: unknown): RequestInit => ({ method: 'POST', body: JSON.stringify(body) });
+
 export const api = {
-  activities: (offset = 0, limit = 50) =>
-    request<ActivityPage>(`/api/activities?limit=${limit}&offset=${offset}`),
+  feed: (offset = 0, limit = 50) => request<FeedPage>(`/api/feed?limit=${limit}&offset=${offset}`),
   // The first sync may import a long history, so it gets a generous timeout.
   sync: () => request<SyncResult>('/api/sync', { method: 'POST' }, 120_000),
+  plan: () => request<Plan>('/api/plan'),
+  exercises: () => request<ExerciseCatalog>('/api/exercises'),
+  createWorkout: (workout: NewWorkout) => request<WorkoutDetail>('/api/workouts', post(workout)),
+  workout: (id: number) => request<WorkoutDetail>(`/api/workouts/${id}`),
+  deleteWorkout: (id: number) => request<null>(`/api/workouts/${id}`, { method: 'DELETE' }),
+  wellness: (days = 14) => request<{ days: Wellness[] }>(`/api/wellness?days=${days}`),
+  chat: () => request<ChatState>('/api/chat'),
+  sendChat: (content: string) => request<ChatState>('/api/chat', post({ content }), 90_000),
+  clearChat: () => request<null>('/api/chat', { method: 'DELETE' }),
 };
 
 export function describeError(error: unknown): { title: string; message: string } {
@@ -135,12 +272,17 @@ export function describeError(error: unknown): { title: string; message: string 
       return { title: 'Garmin chiede una pausa', message: error.message };
     case 'sync_in_progress':
       return { title: 'Sincronizzazione già in corso', message: 'Aspetta qualche secondo e riprova.' };
+    case 'coach_unavailable':
+      return { title: 'Coach AI non disponibile', message: error.message };
   }
   if (error.status === 401) {
     return {
       title: 'Accesso negato',
       message: "Il token dell'app non corrisponde ad API_TOKEN del backend: controlla EXPO_PUBLIC_API_TOKEN.",
     };
+  }
+  if (error.status === 422) {
+    return { title: 'Dati non validi', message: error.message.startsWith('HTTP') ? 'Controlla i valori inseriti.' : error.message };
   }
   return { title: 'Errore del server', message: error.message };
 }

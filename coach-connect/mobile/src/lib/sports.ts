@@ -23,12 +23,12 @@ type SportMeta = {
 const SPORTS: Record<Sport, SportMeta> = {
   run: {
     label: 'Corsa',
-    color: '#FF7A45',
+    color: '#4C8DFF',
     symbol: { ios: 'figure.run', android: 'directions_run', web: 'directions_run' },
   },
   bike: {
     label: 'Bici',
-    color: '#3FA9F5',
+    color: '#38BDF8',
     symbol: { ios: 'figure.outdoor.cycle', android: 'directions_bike', web: 'directions_bike' },
   },
   swim: {
@@ -38,22 +38,22 @@ const SPORTS: Record<Sport, SportMeta> = {
   },
   walk: {
     label: 'Camminata',
-    color: '#A3E635',
+    color: '#7DD3FC',
     symbol: { ios: 'figure.walk', android: 'directions_walk', web: 'directions_walk' },
   },
   hike: {
     label: 'Escursione',
-    color: '#34D399',
+    color: '#60A5FA',
     symbol: { ios: 'figure.hiking', android: 'hiking', web: 'hiking' },
   },
   strength: {
     label: 'Forza',
-    color: '#C084FC',
+    color: '#818CF8',
     symbol: { ios: 'dumbbell.fill', android: 'fitness_center', web: 'fitness_center' },
   },
   cardio: {
     label: 'Cardio',
-    color: '#F472B6',
+    color: '#A78BFA',
     symbol: {
       ios: 'figure.highintensity.intervaltraining',
       android: 'exercise',
@@ -62,7 +62,7 @@ const SPORTS: Record<Sport, SportMeta> = {
   },
   mind_body: {
     label: 'Yoga e mobilità',
-    color: '#FBBF24',
+    color: '#93C5FD',
     symbol: { ios: 'figure.mind.and.body', android: 'self_improvement', web: 'self_improvement' },
   },
   winter: {
@@ -77,7 +77,7 @@ const SPORTS: Record<Sport, SportMeta> = {
   },
   other: {
     label: 'Altro',
-    color: '#9AA6B6',
+    color: '#94A3B8',
     symbol: { ios: 'figure.mixed.cardio', android: 'sports', web: 'sports' },
   },
 };

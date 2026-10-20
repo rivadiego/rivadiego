@@ -1,8 +1,8 @@
 import { SymbolView } from 'expo-symbols';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { colors, radius, spacing } from '@/constants/theme';
-import type { Activity } from '@/lib/api';
+import type { FeedItem } from '@/lib/api';
 import {
   formatActivityDate,
   formatCalories,
@@ -11,47 +11,68 @@ import {
   formatElevation,
   formatHeartRate,
   formatPaceOrSpeed,
+  formatVolume,
 } from '@/lib/format';
 import { sportMeta } from '@/lib/sports';
 
 type Props = {
-  activity: Activity;
+  item: FeedItem;
   now: Date;
+  onPress?: () => void;
 };
 
-export function ActivityCard({ activity, now }: Props) {
-  const sport = sportMeta(activity.sport);
-  const distance = formatDistance(activity.distance_m, activity.sport);
-  const duration = formatDuration(activity.duration_s);
-  const details = [
+function details(item: FeedItem): string[] {
+  const duration = formatDuration(item.duration_s);
+  if (item.source === 'manual') {
+    return [
+      item.exercise_count ? `${item.exercise_count} esercizi` : null,
+      item.set_count ? `${item.set_count} serie` : null,
+      formatVolume(item.volume_kg),
+      formatHeartRate(item.avg_hr),
+      formatCalories(item.calories),
+    ].filter((d): d is string => Boolean(d));
+  }
+  const distance = formatDistance(item.distance_m, item.sport);
+  return [
     distance ? duration : null,
-    formatPaceOrSpeed(activity),
-    formatHeartRate(activity.avg_hr),
-    formatElevation(activity.elevation_gain_m),
-    distance ? null : formatCalories(activity.calories),
-  ].filter((detail): detail is string => Boolean(detail));
-  const subtitle = [formatActivityDate(activity.start_time_local, now), activity.location]
-    .filter(Boolean)
-    .join(' · ');
+    formatPaceOrSpeed(item),
+    formatHeartRate(item.avg_hr),
+    formatElevation(item.elevation_gain_m),
+    distance ? null : formatCalories(item.calories),
+  ].filter((d): d is string => Boolean(d));
+}
+
+export function ActivityCard({ item, now, onPress }: Props) {
+  const sport = sportMeta(item.sport);
+  const primary =
+    item.source === 'manual' ? formatDuration(item.duration_s) : (formatDistance(item.distance_m, item.sport) ?? formatDuration(item.duration_s));
+  const origin = item.source === 'manual' ? (item.garmin_linked ? 'registrato + Garmin' : 'registrato') : item.location;
+  const subtitle = [formatActivityDate(item.start_time_local, now), origin].filter(Boolean).join(' · ');
+  const chips = details(item);
 
   return (
-    <View style={styles.card} accessibilityLabel={`${sport.label}: ${activity.name}, ${subtitle}`}>
+    <Pressable
+      disabled={!onPress}
+      onPress={onPress}
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityLabel={`${sport.label}: ${item.name}, ${subtitle}`}
+      style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
       <View style={[styles.icon, { backgroundColor: `${sport.color}22` }]}>
         <SymbolView name={sport.symbol} size={22} tintColor={sport.color} />
       </View>
       <View style={styles.body}>
         <View style={styles.titleRow}>
           <Text style={styles.title} numberOfLines={1}>
-            {activity.name}
+            {item.name}
           </Text>
-          {(distance ?? duration) && <Text style={styles.primary}>{distance ?? duration}</Text>}
+          {primary && <Text style={styles.primary}>{primary}</Text>}
         </View>
         <Text style={styles.subtitle} numberOfLines={1}>
           {subtitle}
         </Text>
-        {details.length > 0 && (
+        {chips.length > 0 && (
           <View style={styles.details}>
-            {details.map((detail, index) => (
+            {chips.map((detail, index) => (
               <Text key={index} style={styles.detail}>
                 {detail}
               </Text>
@@ -59,7 +80,15 @@ export function ActivityCard({ activity, now }: Props) {
           </View>
         )}
       </View>
-    </View>
+      {onPress && (
+        <SymbolView
+          name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
+          size={14}
+          tintColor={colors.textMuted}
+          style={styles.chevron}
+        />
+      )}
+    </Pressable>
   );
 }
 
@@ -72,6 +101,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
+  },
+  pressed: {
+    opacity: 0.8,
   },
   icon: {
     width: 44,
@@ -121,5 +153,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     backgroundColor: colors.surfaceRaised,
     overflow: 'hidden',
+  },
+  chevron: {
+    alignSelf: 'center',
   },
 });

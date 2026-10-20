@@ -1,4 +1,4 @@
-import type { Activity } from '@/lib/api';
+import type { FeedItem, Measure, SetValues } from '@/lib/api';
 import type { Sport } from '@/lib/sports';
 
 const WEEKDAYS = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];
@@ -103,7 +103,7 @@ function formatPace(secondsPerUnit: number, unit: string): string {
 }
 
 /** Pace for foot sports and swimming, speed for the others; null when it isn't meaningful. */
-export function formatPaceOrSpeed(activity: Activity): string | null {
+export function formatPaceOrSpeed(activity: FeedItem): string | null {
   const speed = activity.avg_speed_mps;
   if (!speed || speed <= 0 || !activity.distance_m) {
     return null;
@@ -134,4 +134,63 @@ export function formatElevation(meters: number | null): string | null {
 
 export function formatCalories(kcal: number | null): string | null {
   return kcal ? `${grouped(kcal)} kcal` : null;
+}
+
+export function formatKg(kg: number | null | undefined): string {
+  return kg == null ? '' : String(Math.round(kg * 100) / 100).replace('.', ',');
+}
+
+export function formatVolume(kg: number | null): string | null {
+  return kg ? `${grouped(kg)} kg` : null;
+}
+
+export function formatSet(set: SetValues, measure: Measure): string {
+  if (measure === 'seconds') {
+    return `${set.seconds ?? '–'}"`;
+  }
+  if (set.note) {
+    return `${set.note} × ${set.reps ?? '–'}`;
+  }
+  if (!set.weight_kg) {
+    return `${set.reps ?? '–'} rip`;
+  }
+  return `${formatKg(set.weight_kg)} × ${set.reps ?? '–'}`;
+}
+
+export function formatSleep(seconds: number | null): string | null {
+  if (!seconds) {
+    return null;
+  }
+  const minutes = Math.round(seconds / 60);
+  return `${Math.floor(minutes / 60)}h${pad(minutes % 60)}`;
+}
+
+/** "Oggi", "Ieri" or "lun 19 ott" for a "YYYY-MM-DD" date. */
+export function formatDay(isoDate: string, now: Date): string {
+  const date = parseLocalTime(isoDate);
+  const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+  if (sameDay(date, now)) {
+    return 'Oggi';
+  }
+  if (sameDay(date, yesterday)) {
+    return 'Ieri';
+  }
+  return `${WEEKDAYS[date.getDay()]} ${date.getDate()} ${MONTHS_SHORT[date.getMonth()]}`;
+}
+
+/** Accepts "61,25" as well as "61.25"; empty or invalid input is null. */
+export function parseDecimal(text: string): number | null {
+  const value = Number(text.trim().replace(',', '.'));
+  return text.trim() && Number.isFinite(value) ? value : null;
+}
+
+/** Local time with its UTC offset, e.g. "2026-10-20T07:10:00+02:00". */
+export function toLocalIso(date: Date): string {
+  const offset = -date.getTimezoneOffset();
+  const sign = offset >= 0 ? '+' : '-';
+  const abs = Math.abs(offset);
+  return (
+    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
+    `T${pad(date.getHours())}:${pad(date.getMinutes())}:00${sign}${pad(Math.floor(abs / 60))}:${pad(abs % 60)}`
+  );
 }

@@ -1,15 +1,17 @@
 import * as Haptics from 'expo-haptics';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, RefreshControl, SectionList, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ActivityCard } from '@/components/activity-card';
+import { Fab } from '@/components/fab';
 import { NoticeBanner, type Notice } from '@/components/notice-banner';
 import { StateView } from '@/components/state-view';
 import { SyncButton } from '@/components/sync-button';
 import { colors, maxContentWidth, radius, spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
-import { api, describeError, type Activity, type ActivityPage } from '@/lib/api';
+import { api, describeError, type FeedItem, type FeedPage } from '@/lib/api';
 import { formatMonth, formatRelative, monthKey } from '@/lib/format';
 
 const PAGE_SIZE = 50;
@@ -21,25 +23,21 @@ function ItemSeparator() {
 }
 
 export default function ActivitiesScreen() {
-  const insets = useSafeAreaInsets();
   const now = useNow(30_000);
-  const [page, setPage] = useState<Omit<ActivityPage, 'items' | 'limit' | 'offset'> | null>(null);
-  const [items, setItems] = useState<Activity[]>([]);
+  const [page, setPage] = useState<Omit<FeedPage, 'items' | 'limit' | 'offset'> | null>(null);
+  const [items, setItems] = useState<FeedItem[]>([]);
   const [loadError, setLoadError] = useState<unknown>(null);
   const [syncing, setSyncing] = useState<SyncTrigger | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
 
-  const applyFirstPage = useCallback((result: ActivityPage) => {
+  const applyFirstPage = useCallback((result: FeedPage) => {
     setItems(result.items);
     setPage({ total: result.total, mode: result.mode, last_sync_at: result.last_sync_at });
     setLoadError(null);
   }, []);
 
-  const loadFirstPage = useCallback(
-    async () => applyFirstPage(await api.activities(0, PAGE_SIZE)),
-    [applyFirstPage],
-  );
+  const loadFirstPage = useCallback(async () => applyFirstPage(await api.feed(0, PAGE_SIZE)), [applyFirstPage]);
 
   const retryLoad = useCallback(() => {
     setLoadError(null);
@@ -47,16 +45,19 @@ export default function ActivitiesScreen() {
     loadFirstPage().catch(setLoadError);
   }, [loadFirstPage]);
 
-  useEffect(() => {
-    let active = true;
-    api
-      .activities(0, PAGE_SIZE)
-      .then((result) => active && applyFirstPage(result))
-      .catch((error: unknown) => active && setLoadError(error));
-    return () => {
-      active = false;
-    };
-  }, [applyFirstPage]);
+  // Reload whenever the tab comes back into view, e.g. after logging a workout.
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      api
+        .feed(0, PAGE_SIZE)
+        .then((result) => active && applyFirstPage(result))
+        .catch((error: unknown) => active && setLoadError(error));
+      return () => {
+        active = false;
+      };
+    }, [applyFirstPage]),
+  );
 
   useEffect(() => {
     if (!notice || notice.tone === 'error') {
@@ -76,11 +77,15 @@ export default function ActivitiesScreen() {
       try {
         const result = await api.sync();
         await loadFirstPage();
-        setNotice(
-          result.new > 0
-            ? { tone: 'success', title: result.new === 1 ? '1 nuova attività' : `${result.new} nuove attività` }
-            : { tone: 'info', title: 'Già tutto aggiornato' },
-        );
+        if (result.warning) {
+          setNotice({ tone: 'error', title: 'Aggiornamento parziale', message: result.warning });
+        } else {
+          setNotice(
+            result.new > 0
+              ? { tone: 'success', title: result.new === 1 ? '1 nuova attività' : `${result.new} nuove attività` }
+              : { tone: 'info', title: 'Già tutto aggiornato' },
+          );
+        }
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       } catch (error) {
         setNotice({ tone: 'error', ...describeError(error) });
@@ -98,10 +103,10 @@ export default function ActivitiesScreen() {
     }
     setLoadingMore(true);
     try {
-      const result = await api.activities(items.length, PAGE_SIZE);
+      const result = await api.feed(items.length, PAGE_SIZE);
       setItems((current) => {
-        const seen = new Set(current.map((activity) => activity.id));
-        return [...current, ...result.items.filter((activity) => !seen.has(activity.id))];
+        const seen = new Set(current.map((item) => item.key));
+        return [...current, ...result.items.filter((item) => !seen.has(item.key))];
       });
     } catch (error) {
       setNotice({ tone: 'error', ...describeError(error) });
@@ -111,10 +116,10 @@ export default function ActivitiesScreen() {
   }, [items.length, loadingMore, page]);
 
   const sections = useMemo(() => {
-    const groups = new Map<string, Activity[]>();
-    for (const activity of items) {
-      const key = monthKey(activity.start_time_local);
-      groups.set(key, [...(groups.get(key) ?? []), activity]);
+    const groups = new Map<string, FeedItem[]>();
+    for (const item of items) {
+      const key = monthKey(item.start_time_local);
+      groups.set(key, [...(groups.get(key) ?? []), item]);
     }
     return Array.from(groups, ([key, data]) => ({ key, title: formatMonth(key), data }));
   }, [items]);
@@ -145,19 +150,30 @@ export default function ActivitiesScreen() {
       <StateView
         symbol={{ ios: 'figure.run.circle', android: 'directions_run', web: 'directions_run' }}
         title="Ancora nessuna attività"
-        message="Premi Aggiorna per scaricare le tue attività da Garmin Connect."
+        message="Premi Aggiorna per scaricare le attività da Garmin Connect, oppure + per registrare un allenamento."
       />
     );
   } else {
     content = (
       <SectionList
         sections={sections}
-        keyExtractor={(activity) => String(activity.id)}
-        renderItem={({ item }) => <ActivityCard activity={item} now={now} />}
+        keyExtractor={(item) => item.key}
+        renderItem={({ item }) => (
+          <ActivityCard
+            item={item}
+            now={now}
+            onPress={
+              item.source === 'manual'
+                ? () => router.push({ pathname: '/workout/[id]', params: { id: String(item.id) } })
+                : undefined
+            }
+          />
+        )}
         renderSectionHeader={({ section }) => <Text style={styles.sectionTitle}>{section.title}</Text>}
         ItemSeparatorComponent={ItemSeparator}
         stickySectionHeadersEnabled={false}
-        contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + spacing.xxl }]}
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={styles.listContent}
         onEndReached={loadMore}
         onEndReachedThreshold={0.6}
         ListFooterComponent={
@@ -191,6 +207,7 @@ export default function ActivitiesScreen() {
         </View>
         {notice && <NoticeBanner notice={notice} onDismiss={() => setNotice(null)} />}
         {content}
+        <Fab accessibilityLabel="Registra un allenamento" onPress={() => router.push('/log')} />
       </View>
     </SafeAreaView>
   );
@@ -253,6 +270,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: spacing.lg,
+    paddingBottom: 96,
   },
   sectionTitle: {
     color: colors.textMuted,

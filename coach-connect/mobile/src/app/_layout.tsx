@@ -19,7 +19,11 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={theme}>
       <StatusBar style="light" />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }} />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="log" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="workout/[id]" options={{ presentation: 'modal' }} />
+      </Stack>
     </ThemeProvider>
   );
 }
