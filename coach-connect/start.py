@@ -225,7 +225,7 @@ def setup_mobile() -> None:
     stamp = MOBILE / "node_modules" / ".package-lock.sha256"
     if not up_to_date(stamp, lockfile):
         say("Installo le dipendenze dell'app (la prima volta ci vuole qualche minuto)…")
-        if node_tool(["npm", "install", "--no-audit", "--no-fund"], MOBILE).returncode != 0:
+        if node_tool(["npm", "install", "--no-audit", "--no-fund", "--update-notifier=false"], MOBILE).returncode != 0:
             fail("npm install non è riuscito: guarda l'errore qui sopra.")
         stamp.write_text(fingerprint(lockfile))
 
@@ -256,8 +256,8 @@ def check_ollama() -> None:
         with urllib.request.urlopen("http://localhost:11434/api/tags", timeout=2) as response:
             tags = json.load(response)
     except OSError:
-        say("Coach AI: Ollama non è acceso, il coach risponderà in modalità offline. "
-            "Per il coach gratuito installa https://ollama.com e rilancia lo script.")
+        say("Coach AI: Ollama non è acceso, il coach risponderà in modalità offline. Per il coach gratuito installa "
+            "https://ollama.com (su un computer di lavoro solo se l'IT lo approva) e rilancia lo script.")
         return
     models = [m["name"] for m in tags.get("models", []) if "embed" not in m["name"]]
     if models:
@@ -326,7 +326,11 @@ def main() -> None:
         # Straight through node: on Windows npx.cmd would ask "Terminate batch job?" on Ctrl+C.
         expo = [node, str(MOBILE / "node_modules" / "expo" / "bin" / "cli"), "start"]
         # The default Expo tunnel needs an Expo account, the ngrok one (@expo/ngrok in package.json) does not.
-        subprocess.run([*expo, *(["--tunnel", "ngrok"] if args.tunnel else [])], cwd=MOBILE)
+        result = subprocess.run([*expo, *(["--tunnel", "ngrok"] if args.tunnel else [])], cwd=MOBILE)
+        if args.tunnel and result.returncode != 0:
+            say("Il tunnel non si è collegato: questa rete blocca ngrok. Sulle reti aziendali è una scelta dell'IT, "
+                "non aggirarla. Rilancia senza --tunnel con iPhone e computer sulla stessa Wi-Fi (o su un computer "
+                "personale), oppure senza --tunnel premi w per usare l'app nel browser del computer.")
     except KeyboardInterrupt:
         pass
     finally:

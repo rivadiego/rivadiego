@@ -24,7 +24,7 @@ Lo script prepara backend e app, la prima volta ti chiede nome, altezza, peso e 
 
 L'iPhone parla solo con il server di Expo (porta 8081), che inoltra le richieste `/api` al backend: il backend resta raggiungibile solo dal computer. Se in Expo Go l'app non si carica, di solito è il firewall (su un PC aziendale non si sblocca senza amministratore) o una Wi-Fi che isola i dispositivi:
 
-- **`--tunnel`**: `.\coach-connect\start.cmd --tunnel` (oppure `python3 coach-connect/start.py --tunnel`). L'app passa da un indirizzo pubblico casuale creato da Expo con ngrok, attivo solo finché lo script è acceso: funziona anche con l'iPhone in 4G. Alcune reti aziendali e VPN bloccano anche i tunnel: in quel caso prova dalla Wi-Fi di casa con la VPN spenta.
+- **`--tunnel`**: `.\coach-connect\start.cmd --tunnel` (oppure `python3 coach-connect/start.py --tunnel`). L'app passa da un indirizzo pubblico casuale creato da Expo con ngrok, attivo solo finché lo script è acceso: funziona anche con l'iPhone in 4G. Molte reti aziendali bloccano i tunnel di proposito ("ngrok tunnel took too long to connect"): non aggirare il blocco, usa il browser o un computer personale.
 - **Browser**: premi `w` nel terminale di Expo (o apri <http://localhost:8081>) e l'app gira nel browser del computer, senza passare dalla rete.
 - **OneDrive**: lo script si ferma se la cartella è lì dentro. OneDrive blocca le decine di migliaia di file che installano npm e Python, e caricherebbe nel cloud aziendale il database con i tuoi dati di salute.
 - Se npm non riesce a scaricare i pacchetti per colpa del proxy aziendale, serve configurarlo (`npm config set proxy …`) o usare un computer personale, che resta la scelta migliore anche per dati di salute e login Garmin.
@@ -100,7 +100,7 @@ La scheda è in `backend/coach_connect/plan.py`: Workout A (Push) e B (Pull) a g
 
 Ogni domanda arriva al modello insieme a un riepilogo calcolato dal backend: scheda, prossimo allenamento, ultimi 7 giorni rispetto all'obiettivo (3 palestra + 2 corse), parametri vitali degli ultimi 14 giorni, attività e serie registrate, e i carichi già calcolati con le regole della scheda. Le conversazioni restano salvate nel database; "Nuova chat" ricomincia da zero.
 
-1. Installa [Ollama](https://ollama.com) sul computer dove gira il backend (Mac, Windows o Linux). Nessun account.
+1. Installa [Ollama](https://ollama.com) sul computer dove gira il backend (Mac, Windows o Linux). Nessun account. Sui computer aziendali spesso non è approvato: in quel caso usalo su un computer personale.
 2. Scarica un modello: `ollama pull qwen3:8b` con 16 GB di RAM, oppure `ollama pull qwen3:4b` con 8 GB.
 3. Fine: il backend trova da solo Ollama e il modello installato, e nella tab Coach compare "Coach AI locale".
 
