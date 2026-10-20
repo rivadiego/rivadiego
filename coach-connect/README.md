@@ -7,7 +7,24 @@ App personale per il mio allenamento ibrido (palestra + corsa) sui dati Garmin:
 - **Scheda**: la scheda Hybrid Athlete con il prossimo allenamento (Workout A o B) e i carichi da fare la prossima volta.
 - **Coach**: chat da personal trainer che vede scheda, allenamenti e parametri vitali (sonno, HRV, Body Battery, readiness…) degli ultimi 14 giorni. Gratis con Ollama sul tuo computer, oppure dentro Cursor.
 
-## Avvio rapido
+## Online, senza computer acceso (gratis)
+
+Il sito gira su [Hugging Face Spaces](https://huggingface.co/spaces) (piano gratuito) e si apre dall'iPhone con Safari, anche fuori casa. GitHub lo pubblica da solo a ogni modifica del codice (`.github/workflows/coach-connect-online.yml`).
+
+1. Crea un account gratuito su [huggingface.co](https://huggingface.co/join), poi un token in **Settings → Access Tokens → Create new token**, di tipo **Write**.
+2. Sul repository GitHub apri **Settings → Secrets and variables → Actions** e aggiungi due *repository secret*:
+   - `HF_TOKEN`: il token di Hugging Face;
+   - `COACH_ACCESS_CODE`: un codice di accesso scelto da te, di almeno 8 caratteri (per esempio una frase). Lo chiede l'app.
+3. Avvia la pubblicazione: **Actions → Coach Connect online → Run workflow** (le volte successive parte da sola). In 5-10 minuti il log finisce con l'indirizzo, del tipo `https://<utente>-coach-connect.hf.space`.
+4. Sull'iPhone apri l'indirizzo in Safari e inserisci il codice, oppure apri direttamente `https://<utente>-coach-connect.hf.space/#codice=<il tuo codice>`. Poi **Condividi → Aggiungi alla schermata Home**: si apre a tutto schermo, come un'app.
+5. Nell'app tocca **Collega Garmin** (email, password e codice di verifica se attivo): la prima volta scarica tutto lo storico.
+
+- **Dati**: database e token Garmin stanno in un dataset **privato** su Hugging Face (`<utente>/coach-connect-data`), perché il disco dello Space si azzera a ogni riavvio: l'app li ripristina all'avvio e li salva qualche secondo dopo ogni modifica. Lo Space è pubblico, ma l'API risponde solo con il codice di accesso.
+- **Pausa**: dopo 48 ore senza visite lo Space si ferma; la volta dopo ci mette circa un minuto a ripartire.
+- **Coach AI**: senza altro risponde in modalità offline. Per un modello vero aggiungi il secret `LLM_API_KEY` e le *variables* `LLM_BASE_URL` e `LLM_MODEL` di un servizio compatibile OpenAI: in quel caso scheda e parametri vitali vengono inviati a quel servizio.
+- Il token `HF_TOKEN` finisce anche nei secret dello Space, perché l'app possa scrivere nel dataset: trattalo come una password.
+
+## Sul tuo computer
 
 Servono Python 3.12+ ([python.org](https://www.python.org/downloads/), consigliato 3.13; su Windows anche dal Microsoft Store) e l'app **Expo Go** sull'iPhone. Node.js non serve installarlo: se manca o è troppo vecchio (serve la 22.13, la 24.3 o più recente), lo script ne scarica una copia portatile nella cache del tuo utente (su Windows `%LOCALAPPDATA%\coach-connect`), senza permessi di amministratore. La cartella del progetto non può stare in OneDrive: sui PC aziendali Desktop e Documenti di solito lo sono, quindi mettila per esempio in `C:\Users\<nome>`. Poi, dalla cartella del repository:
 
@@ -127,7 +144,7 @@ Il repository contiene `.cursor/mcp.json`, che avvia `python -m coach_connect mc
 |------|-------|-------|
 | **Expo Go** | gratis | Per lo sviluppo: l'app gira finché sul computer è acceso `start.py` (Expo e backend). |
 | **TestFlight** | Apple Developer Program, 99 $/anno | App vera con icona, sempre disponibile. La build si fa nel cloud con EAS (`npx eas-cli@latest build -p ios`, poi `submit`): non serve un Mac. Richiede il backend raggiungibile in HTTPS. |
-| **Sito web (PWA)** | gratis | `npx expo export -p web` genera `mobile/dist/`, da pubblicare su Netlify, Vercel o Cloudflare Pages. Su Safari: Condividi → "Aggiungi alla schermata Home". |
+| **Sito online** | gratis | Su Hugging Face Spaces, pubblicato da GitHub (vedi [Online](#online-senza-computer-acceso-gratis)). Su Safari: Condividi → "Aggiungi alla schermata Home". |
 
 Widget, HealthKit e notifiche push richiedono la build installata (TestFlight), non Expo Go.
 
@@ -148,7 +165,9 @@ Poi nell'app imposta `EXPO_PUBLIC_API_URL` (ed `EXPO_PUBLIC_API_TOKEN`) in `mobi
 |-----------|---------|--------------|
 | `GARMIN_DEMO` | `0` | `1` = dati finti (database separato `data/demo.db`) |
 | `GARMIN_TOKEN_DIR` | `~/.garminconnect` | Cartella dei token, fuori dal repo |
-| `API_TOKEN` | vuoto | Se impostato, l'app deve mandare `Authorization: Bearer <token>` |
+| `API_TOKEN` | vuoto | Codice di accesso: se impostato, l'app deve mandare `Authorization: Bearer <codice>` (online è obbligatorio) |
+| `WEB_DIR` | vuoto | Cartella del sito esportato, servito dal backend all'indirizzo `/` |
+| `HF_TOKEN`, `HF_DATA_REPO` | vuoti | Online: dataset privato dove salvare database e token Garmin |
 | `ATHLETE_NAME`, `ATHLETE_HEIGHT_CM`, `ATHLETE_WEIGHT_KG` | vuoti | Profilo per il coach e peso per i chin-up zavorrati |
 | `WELLNESS_DAYS` / `WELLNESS_MAX_DAYS_PER_SYNC` | `14` / `6` | Giorni di parametri vitali per il coach e giorni mancanti scaricati per ogni "Aggiorna" |
 | `OLLAMA_URL`, `OLLAMA_MODEL`, `OLLAMA_NUM_CTX` | `http://localhost:11434`, vuoto, `8192` | Coach gratuito con Ollama (modello vuoto = il primo installato) |
@@ -169,6 +188,8 @@ Poi nell'app imposta `EXPO_PUBLIC_API_URL` (ed `EXPO_PUBLIC_API_TOKEN`) in `mobi
 | `GET` | `/api/wellness?days=14` | Parametri vitali giornalieri |
 | `GET` / `POST` / `DELETE` | `/api/chat` | Conversazione con il coach |
 | `GET` | `/api/activities`, `/api/status` | Solo attività Garmin; stato del collegamento |
+| `POST` | `/api/garmin/login`, `/api/garmin/code` | Collega Garmin dall'app: email e password, poi il codice di verifica se richiesto |
+| `POST` | `/api/backup` | Salva subito sul dataset privato (online) |
 
 Documentazione interattiva: <http://localhost:8000/docs>.
 
@@ -177,6 +198,7 @@ Documentazione interattiva: <http://localhost:8000/docs>.
 ```
 coach-connect/
 ├── start.py · start.cmd    # avvio con un comando (start.cmd per Windows)
+├── deploy/                 # Dockerfile e pubblicazione su Hugging Face Spaces
 ├── backend/
 │   ├── coach_connect/
 │   │   ├── sources.py      # Garmin Connect reale e generatore demo
@@ -189,14 +211,18 @@ coach-connect/
 │   │   ├── coach.py        # chat: contesto, Ollama, risposte offline
 │   │   ├── mcp_server.py   # server MCP per Cursor
 │   │   ├── exercises.py    # catalogo esercizi
-│   │   ├── api.py          # API FastAPI
+│   │   ├── garmin_auth.py  # collegamento a Garmin dall'app (con codice di verifica)
+│   │   ├── backup.py       # online: database e token nel dataset privato
+│   │   ├── api.py          # API FastAPI (e sito, quando WEB_DIR è impostato)
 │   │   └── cli.py          # login · sync · status · serve · mcp
 │   └── tests/
 └── mobile/
     ├── metro.config.js     # in sviluppo inoltra /api al backend
+    ├── public/             # pagina HTML, icona e manifest per la schermata Home
     └── src/
         ├── app/(tabs)/     # Attività · Scheda · Coach
         ├── app/log.tsx     # registra allenamento (+)
+        ├── app/garmin.tsx  # collega Garmin
         ├── app/workout/    # dettaglio allenamento registrato
         ├── components/     # card, editor esercizi, selettore, chat…
         └── lib/            # client API, formattazione, bozza allenamento
@@ -211,4 +237,4 @@ cd coach-connect/mobile && npx tsc --noEmit && npx expo lint
 
 ## Privacy
 
-Questo repository è **pubblico** su GitHub: il codice è visibile a tutti, i tuoi dati no. `.env`, `backend/data/` (database con attività, parametri vitali, allenamenti e chat) e i token sono esclusi da git: non aggiungerli a mano. Con Ollama anche il coach resta sul tuo computer. Il PDF del Greek God Program è protetto da copyright e va tenuto solo in locale.
+Questo repository è **pubblico** su GitHub: il codice è visibile a tutti, i tuoi dati no. `.env`, `backend/data/` (database con attività, parametri vitali, allenamenti e chat) e i token sono esclusi da git: non aggiungerli a mano. Online i dati stanno solo nel dataset privato su Hugging Face, e anche i log delle GitHub Actions (pubblici, come il repository) non ne riportano. Con Ollama anche il coach resta sul tuo computer. Il PDF del Greek God Program è protetto da copyright e va tenuto solo in locale.

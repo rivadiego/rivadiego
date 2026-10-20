@@ -1,0 +1,60 @@
+name: Coach Connect online
+
+# Publishes Coach Connect on Hugging Face Spaces at every change (see coach-connect/README.md).
+on:
+  push:
+    branches: [main, cursor/garmin-app-scaffold-46f9]
+    paths: [coach-connect/**, .github/workflows/coach-connect-online.yml]
+  workflow_dispatch:
+
+concurrency:
+  group: coach-connect-online
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.secrets.outputs.ready }}
+    steps:
+      - id: secrets
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          COACH_ACCESS_CODE: ${{ secrets.COACH_ACCESS_CODE }}
+        run: |
+          if [ -n "$HF_TOKEN" ] && [ -n "$COACH_ACCESS_CODE" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::Pubblicazione saltata: aggiungi i secret HF_TOKEN e COACH_ACCESS_CODE (coach-connect/README.md)."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy:
+    needs: check
+    if: needs.check.outputs.ready == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: coach-connect/mobile/package-lock.json
+      - name: Build the web app
+        working-directory: coach-connect/mobile
+        run: |
+          npm ci --no-audit --no-fund
+          npx expo export -p web
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: pip install "huggingface_hub>=1.0"
+      - name: Publish on Hugging Face
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          COACH_ACCESS_CODE: ${{ secrets.COACH_ACCESS_CODE }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_BASE_URL: ${{ vars.LLM_BASE_URL }}
+          LLM_MODEL: ${{ vars.LLM_MODEL }}
+        run: python coach-connect/deploy/deploy_hf.py --web coach-connect/mobile/dist
