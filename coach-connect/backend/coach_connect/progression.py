@@ -63,18 +63,15 @@ def suggest(
     exercise: Exercise,
     last: list[LoggedSet],
     *,
-    ramp_up: bool,
     bodyweight: float | None,
 ) -> Suggestion:
     """Next-session targets for a plan exercise, given the sets logged last time."""
     if item["scheme"] == "rpt":
-        return _suggest_rpt(item["reps"], exercise, last, ramp_up=ramp_up, bodyweight=bodyweight)
+        return _suggest_rpt(item["reps"], exercise, last, bodyweight=bodyweight)
     return _suggest_straight(item["sets"], item["rep_range"], exercise, last)
 
 
-def _suggest_rpt(
-    reps: list[int], exercise: Exercise, last: list[LoggedSet], *, ramp_up: bool, bodyweight: float | None
-) -> Suggestion:
+def _suggest_rpt(reps: list[int], exercise: Exercise, last: list[LoggedSet], *, bodyweight: float | None) -> Suggestion:
     top = last[0].weight_kg if last else None
     if exercise.equipment == "weighted_bodyweight" and last and not top:
         if _closed(last, [10] * len(reps)):
@@ -87,11 +84,6 @@ def _suggest_rpt(
         return Suggestion(
             [SetTarget(None, r) for r in reps],
             "Prima volta: scegli il carico della prima serie, le altre a −10% con più ripetizioni.",
-        )
-    if ramp_up:
-        return Suggestion(
-            [SetTarget(top, last[i].reps if i < len(last) else reps[0]) for i in range(len(reps))],
-            "Fase di ripresa: 3 serie con lo stesso carico, 2-3 ripetizioni dal cedimento.",
         )
     if _closed(last, reps):
         top = round(top + exercise.increment_kg, 2)

@@ -1,5 +1,5 @@
 from fastapi.testclient import TestClient
-from helpers import FakeSource, make_raw
+from helpers import FakeSource, make_raw, offline_coach
 
 from coach_connect.api import create_app
 from coach_connect.config import Settings
@@ -7,7 +7,8 @@ from coach_connect.sources import DemoSource, GarminRateLimited, GarminSource
 
 
 def client_for(tmp_path, source, **settings):
-    return TestClient(create_app(Settings(db_path=tmp_path / "api.db", **settings), source))
+    config = Settings(db_path=tmp_path / "api.db", **settings)
+    return TestClient(create_app(config, source, offline_coach(config)))
 
 
 def test_demo_sync_then_list_activities(tmp_path):
@@ -126,7 +127,7 @@ def test_plan_exercises_and_wellness_endpoints(tmp_path):
 
     plan = client.get("/api/plan").json()
     assert set(plan["workouts"]) == {"A", "B"}
-    assert len(plan["days"]) == 7 and sum(d["is_today"] for d in plan["days"]) == 1
+    assert plan["next_workout"] in ("A", "B") and plan["last_workout"]["key"] in ("A", "B")
     assert plan["workouts"]["A"]["exercises"][0]["suggestion"]["sets"]
 
     catalog = client.get("/api/exercises").json()

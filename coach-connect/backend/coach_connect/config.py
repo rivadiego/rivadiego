@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from datetime import date
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -26,11 +25,6 @@ def _float(name: str) -> float | None:
     return float(value) if value else None
 
 
-def _date(name: str) -> date | None:
-    value = (os.getenv(name) or "").strip()
-    return date.fromisoformat(value) if value else None
-
-
 @dataclass(frozen=True)
 class Settings:
     demo: bool = False
@@ -46,17 +40,17 @@ class Settings:
     athlete_name: str | None = None
     athlete_height_cm: float | None = None
     athlete_weight_kg: float | None = None
-    plan_start_date: date | None = None
-    # Any OpenAI-compatible chat completions endpoint (OpenAI, Gemini, Anthropic, OpenRouter, Ollama…).
+    # Free coach: an Ollama server on this computer. When no model is set, the first installed chat model is used.
+    ollama_url: str = "http://localhost:11434"
+    ollama_model: str | None = None
+    ollama_num_ctx: int = 8192
+    # Optional paid alternative: any OpenAI-compatible chat completions endpoint, used when a key is set.
     llm_base_url: str = "https://api.openai.com/v1"
     llm_api_key: str | None = None
     llm_model: str | None = None
-    llm_timeout_s: float = 60.0
+    # Local models on a laptop CPU can take a while to answer.
+    llm_timeout_s: float = 180.0
     chat_history_messages: int = 20
-
-    @property
-    def llm_configured(self) -> bool:
-        return bool(self.llm_api_key and self.llm_model)
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -78,10 +72,12 @@ class Settings:
             athlete_name=(os.getenv("ATHLETE_NAME") or "").strip() or None,
             athlete_height_cm=_float("ATHLETE_HEIGHT_CM"),
             athlete_weight_kg=_float("ATHLETE_WEIGHT_KG"),
-            plan_start_date=_date("PLAN_START_DATE"),
+            ollama_url=(os.getenv("OLLAMA_URL") or "http://localhost:11434").rstrip("/"),
+            ollama_model=os.getenv("OLLAMA_MODEL") or None,
+            ollama_num_ctx=int(os.getenv("OLLAMA_NUM_CTX") or 8192),
             llm_base_url=(os.getenv("LLM_BASE_URL") or "https://api.openai.com/v1").rstrip("/"),
             llm_api_key=os.getenv("LLM_API_KEY") or None,
             llm_model=os.getenv("LLM_MODEL") or None,
-            llm_timeout_s=float(os.getenv("LLM_TIMEOUT_S") or 60),
+            llm_timeout_s=float(os.getenv("LLM_TIMEOUT_S") or 180),
             chat_history_messages=int(os.getenv("CHAT_HISTORY_MESSAGES") or 20),
         )

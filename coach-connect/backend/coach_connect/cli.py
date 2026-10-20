@@ -1,4 +1,4 @@
-"""Command line entry point: python -m coach_connect <login|sync|status|serve>."""
+"""Command line entry point: python -m coach_connect <login|sync|status|serve|mcp>."""
 
 from __future__ import annotations
 
@@ -24,8 +24,9 @@ def cmd_login(settings: Settings) -> int:
     token_file = settings.token_dir / TOKEN_FILE
     print("Collegamento a Garmin Connect")
     print("La password serve solo adesso: vengono salvati unicamente i token di accesso.\n")
-    email = input("Email Garmin: ").strip()
-    password = getpass.getpass("Password Garmin: ")
+    # GARMIN_EMAIL / GARMIN_PASSWORD let a non-interactive environment (e.g. Cursor secrets) log in.
+    email = os.getenv("GARMIN_EMAIL") or input("Email Garmin: ").strip()
+    password = os.getenv("GARMIN_PASSWORD") or getpass.getpass("Password Garmin: ")
     settings.token_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
     if token_file.exists():
         # Otherwise login() would silently reuse the old session instead of the new credentials.
@@ -113,6 +114,7 @@ def main(argv: list[str] | None = None) -> int:
     serve.add_argument("--host", default="0.0.0.0", help="0.0.0.0 = raggiungibile dall'iPhone sulla stessa Wi-Fi")
     serve.add_argument("--port", type=int, default=8000)
     serve.add_argument("--reload", action="store_true", help="riavvia da solo quando modifichi il codice")
+    sub.add_parser("mcp", parents=[common], help="server MCP per chattare con i tuoi dati da Cursor (stdio)")
     args = parser.parse_args(argv)
 
     if getattr(args, "demo", False):
@@ -120,6 +122,11 @@ def main(argv: list[str] | None = None) -> int:
         os.environ["GARMIN_DEMO"] = "1"
     if args.command == "serve":
         return cmd_serve(args.host, args.port, args.reload)
+    if args.command == "mcp":
+        from .mcp_server import run
+
+        run()
+        return 0
     settings = Settings.from_env()
     if args.command == "login":
         return cmd_login(settings)

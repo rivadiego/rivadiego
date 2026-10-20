@@ -2,3 +2,4 @@ fastapi>=0.150
 uvicorn[standard]>=0.54
 garminconnect>=0.3.19
 python-dotenv>=1.2
+mcp>=2.3

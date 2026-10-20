@@ -13,7 +13,7 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, Field
 
 from . import __version__
-from .coach import chat_history, clear_chat, reply
+from .coach import Coach, chat_history, clear_chat
 from .config import Settings
 from .db import Database
 from .exercises import EXERCISES, GROUPS
@@ -89,6 +89,11 @@ class FeedPage(BaseModel):
     last_sync_at: str | None
 
 
+class CoachStatus(BaseModel):
+    mode: Literal["api", "ollama", "offline"]
+    model: str | None
+
+
 class Status(BaseModel):
     version: str
     mode: str
@@ -96,7 +101,7 @@ class Status(BaseModel):
     activity_count: int
     last_sync_at: str | None
     history_complete: bool
-    coach_ai: bool
+    coach: CoachStatus
 
 
 class SyncResponse(BaseModel):
@@ -166,9 +171,12 @@ def _workout_response(workout: dict[str, Any]) -> dict[str, Any]:
     return data
 
 
-def create_app(settings: Settings | None = None, source: ActivitySource | None = None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None, source: ActivitySource | None = None, coach: Coach | None = None
+) -> FastAPI:
     settings = settings or Settings.from_env()
     source = source or build_source(settings)
+    coach = coach or Coach(settings)
     db = Database(settings.db_path)
     syncer = Syncer(
         source,
@@ -216,7 +224,7 @@ def create_app(settings: Settings | None = None, source: ActivitySource | None =
             activity_count=db.count_activities(),
             last_sync_at=db.get_meta(LAST_SYNC_AT),
             history_complete=db.get_meta(HISTORY_COMPLETE) == "1",
-            coach_ai=settings.llm_configured,
+            coach=CoachStatus(**coach.status()),
         )
 
     @app.get("/api/activities", response_model=ActivityPage, dependencies=protected)
@@ -303,12 +311,12 @@ def create_app(settings: Settings | None = None, source: ActivitySource | None =
 
     @app.get("/api/chat", dependencies=protected)
     def chat() -> dict[str, Any]:
-        return {"messages": chat_history(db), "coach_ai": settings.llm_configured}
+        return {"messages": chat_history(db), "coach": coach.status()}
 
     @app.post("/api/chat", dependencies=protected)
     def send_chat(body: ChatIn) -> dict[str, Any]:
-        messages = reply(db, settings, body.content.strip(), today=date.today())
-        return {"messages": messages, "coach_ai": settings.llm_configured}
+        messages = coach.reply(db, body.content.strip(), today=date.today())
+        return {"messages": messages, "coach": coach.status()}
 
     @app.delete("/api/chat", status_code=204, dependencies=protected)
     def reset_chat() -> None:

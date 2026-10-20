@@ -9,7 +9,7 @@ from typing import Any
 
 from .db import Database
 from .exercises import EXERCISES
-from .plan import ABS_CIRCUIT, WORKOUTS, is_ramp_up, monday_of, week_number, workout_exercises
+from .plan import ABS_CIRCUIT, WORKOUTS, workout_exercises
 from .progression import LoggedSet, SetTarget, suggest
 
 # A logged gym session and a Garmin strength activity this close in time are the same workout.
@@ -246,10 +246,7 @@ def seed_demo_workouts(db: Database, *, bodyweight: float, weeks: int = 5) -> in
     if first_workout_date(db) is not None:
         return 0
     rng = random.Random(42)
-    start = monday_of(date.today()) - timedelta(weeks=weeks)
-    if db.get_meta("plan_start_date") is None:
-        db.set_meta("plan_start_date", start.isoformat())
-    plan_start = date.fromisoformat(db.get_meta("plan_start_date") or start.isoformat())
+    start = date.today() - timedelta(weeks=weeks)
     with db.connect() as conn:
         sessions = conn.execute(
             "SELECT name, start_time_local, start_time_gmt, duration_s FROM activities "
@@ -262,13 +259,12 @@ def seed_demo_workouts(db: Database, *, bodyweight: float, weeks: int = 5) -> in
         which = "A" if "Push" in session["name"] else "B" if "Pull" in session["name"] else None
         if which is None:
             continue
-        week = week_number(plan_start, date.fromisoformat(session["start_time_local"][:10]))
         logged: list[tuple[str, list[LoggedSet]]] = []
-        for item in workout_exercises(which, week):
+        for item in workout_exercises(which):
             exercise = EXERCISES[item["exercise_id"]]
             last = history.get(exercise.id)
             if last:
-                targets = suggest(item, exercise, last, ramp_up=is_ramp_up(week), bodyweight=bodyweight).sets
+                targets = suggest(item, exercise, last, bodyweight=bodyweight).sets
             else:
                 load = _DEMO_START_LOADS.get(exercise.id, 10.0)
                 reps = item["reps"] or [item["rep_range"][0]] * item["sets"]

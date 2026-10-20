@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import re
+import time
 import urllib.error
 import urllib.request
 from collections.abc import Callable
@@ -11,18 +13,20 @@ from typing import Any
 
 from .config import Settings
 from .db import Database
+from .plan import RULES, WEEKDAYS, WEEKLY_TARGET
 from .planner import plan_payload
-from .plan import RULES, WEEKDAYS
 from .sources import SourceError
 from .wellness import wellness_rows
-from .workouts import feed, workouts_since
+from .workouts import done_by_day, feed, workouts_since
 
 MONTHS = ("gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre", "ottobre",
           "novembre", "dicembre")
 OFFLINE_NOTE = (
-    "*Coach offline: rispondo con regole automatiche sui tuoi dati. Collega un modello AI nel backend "
-    "per parlare liberamente (vedi README).*"
+    "*Coach offline: rispondo con regole automatiche sui tuoi dati. Per il coach AI gratuito installa Ollama "
+    "sul computer del backend (vedi README).*"
 )
+# Families that chat well in Italian, tried in this order when OLLAMA_MODEL isn't set.
+PREFERRED_OLLAMA_MODELS = ("qwen3", "qwen", "gemma", "llama", "mistral", "phi")
 
 
 class CoachUnavailable(SourceError):
@@ -58,32 +62,48 @@ def _set_text(s: dict[str, Any], measure: str = "reps") -> str:
     return f"{_kg(s['weight_kg'])}×{s.get('reps') or '–'}"
 
 
+def _short_date(iso: str) -> str:
+    day = date.fromisoformat(iso[:10])
+    return f"{WEEKDAYS[day.weekday()].lower()} {day.day}/{day.month}"
+
+
 def build_snapshot(db: Database, settings: Settings, today: date) -> dict[str, Any]:
     since = (today - timedelta(days=13)).isoformat()
+    last_week = done_by_day(db, today - timedelta(days=6), today)
     return {
         "today": today,
-        "athlete": {
-            "name": settings.athlete_name,
-            "height_cm": settings.athlete_height_cm,
-        },
+        "athlete": {"name": settings.athlete_name, "height_cm": settings.athlete_height_cm},
         "plan": plan_payload(db, settings, today),
+        "week": {
+            "gym": sum(1 for d in last_week.values() if d["gym"]),
+            "run": sum(1 for d in last_week.values() if d["run"]),
+        },
         "wellness": wellness_rows(db, today=today, days=settings.wellness_days),
         "activities": [a for a in feed(db, limit=60, since_local=since) if a["source"] == "garmin"],
         "workouts": workouts_since(db, since),
     }
 
 
+def _next_line(plan: dict[str, Any]) -> str:
+    nxt = plan["workouts"][plan["next_workout"]]["title"]
+    last = plan["last_workout"]
+    if last is None:
+        return f"Prossimo allenamento in palestra: {nxt} (nessun allenamento registrato finora)."
+    when = "oggi" if plan["done_today"] else _short_date(last["date"])
+    return f"Ultimo allenamento in palestra: {last['title']} ({when}). Prossimo: {nxt}."
+
+
 def render_context(snapshot: dict[str, Any]) -> str:
     today: date = snapshot["today"]
     plan = snapshot["plan"]
     athlete = snapshot["athlete"]
+    week = snapshot["week"]
     lines = [
         f"Oggi è {WEEKDAYS[today.weekday()].lower()} {today.day} {MONTHS[today.month - 1]} {today.year}.",
-        f"Programma: {plan['name']} ({plan['subtitle']}), settimana {plan['week']}, fase \"{plan['phase']['name']}\": "
-        f"{plan['phase']['text']}",
-        f"Sessione prevista oggi: {plan['today']['title']}"
-        + (" (già fatta)." if plan["today"]["done"] else ".")
-        + f" Prossimo workout in palestra: {plan['next_gym_workout']}.",
+        f"Programma: {plan['name']} ({plan['subtitle']}), con 2 corse a settimana (una di qualità e un lungo).",
+        _next_line(plan),
+        f"Ultimi 7 giorni: {week['gym']} sessioni di palestra e {week['run']} corse "
+        f"(obiettivo {WEEKLY_TARGET['gym']} + {WEEKLY_TARGET['run']}).",
     ]
     profile = [part for part in (
         athlete.get("name"),
@@ -92,9 +112,6 @@ def render_context(snapshot: dict[str, Any]) -> str:
     ) if part]
     if profile:
         lines.append("Atleta: " + ", ".join(profile) + ".")
-    lines.append("Settimana: " + "; ".join(
-        f"{d['weekday'][:3]} {d['title']}{' ✓' if d['done'] else ''}" for d in plan["days"]
-    ))
 
     lines += ["", "Parametri vitali (Garmin), dal più recente:",
               "data | sonno (punteggio) | HRV notte, stato | FC riposo | Body Battery risveglio/min | stress | passi | readiness"]
@@ -132,7 +149,7 @@ def render_context(snapshot: dict[str, Any]) -> str:
         lines.append("(nessuno)")
 
     lines += ["", "Prossimi carichi calcolati dalle regole della scheda (usali, non ricalcolarli):"]
-    for key, workout in plan["workouts"].items():
+    for workout in plan["workouts"].values():
         parts = []
         for e in workout["exercises"]:
             sets = ", ".join(_set_text(s) for s in e["suggestion"]["sets"])
@@ -143,9 +160,10 @@ def render_context(snapshot: dict[str, Any]) -> str:
 
 def system_prompt(snapshot: dict[str, Any]) -> str:
     rules = "\n".join(f"- {r['title']}: {r['text']}" for r in RULES)
-    name = snapshot["athlete"].get("name") or "l'atleta"
+    name = snapshot["athlete"].get("name")
+    athlete = f"{name}, un atleta ibrido" if name else "un atleta ibrido"
     return (
-        f"Sei il personal trainer di {name}, un atleta ibrido (palestra upper body + corsa). Parli in italiano, "
+        f"Sei il personal trainer di {athlete} (palestra upper body + corsa). Parli in italiano, "
         "in modo diretto, pratico e motivante, con risposte brevi (massimo 8-10 righe) e numeri concreti.\n"
         "Basati solo sui dati qui sotto: se un dato manca, dillo invece di inventarlo. Collega sempre il consiglio "
         "allo stato di recupero (sonno, HRV, Body Battery, readiness) e alla scheda. Non sei un medico: per dolore, "
@@ -156,7 +174,7 @@ def system_prompt(snapshot: dict[str, Any]) -> str:
 
 
 def offline_reply(question: str, snapshot: dict[str, Any]) -> str:
-    """Rule-based answers used when no language model is configured."""
+    """Rule-based answers used when no language model is available."""
     q = question.lower()
     plan = snapshot["plan"]
     last_night = snapshot["wellness"][0] if snapshot["wellness"] else None
@@ -188,33 +206,24 @@ def offline_reply(question: str, snapshot: dict[str, Any]) -> str:
             f"Body Battery al risveglio {_kg(last_night['body_battery_wake'])}, readiness {_kg(readiness)}. {advice}"
         )
     if any(k in q for k in ("settiman", "andata", "riepilog", "fatto")):
-        done = [d for d in plan["days"] if d["done"]]
-        planned = [d for d in plan["days"] if d["kind"] != "rest"]
         week_ago = (snapshot["today"] - timedelta(days=6)).isoformat()
         km = sum((a["distance_m"] or 0) for a in snapshot["activities"] if a["sport"] == "run" and a["start_time_local"] >= week_ago) / 1000
         km_text = f"{km:.1f}".replace(".", ",")
+        week = snapshot["week"]
         sections.append(
-            f"Questa settimana hai completato {len(done)} sessioni su {len(planned)} previste "
-            f"({', '.join(d['title'] for d in done) or 'nessuna ancora'}). Negli ultimi 7 giorni hai corso {km_text} km."
+            f"Negli ultimi 7 giorni: {week['gym']} sessioni di palestra su {WEEKLY_TARGET['gym']} e {week['run']} corse "
+            f"su {WEEKLY_TARGET['run']}, per {km_text} km di corsa."
         )
     if any(k in q for k in ("carich", "peso", "kg", "panca", "chin", "rematore", "curl", "oggi", "workout", "palestra")):
-        today = plan["today"]
-        gym_today = today["kind"] == "gym" and not today["done"]
-        which = today["key"] if gym_today else plan["next_gym_workout"]
-        if gym_today:
-            intro = ""
-        elif today["kind"] == "gym":
-            intro = f"Oggi hai già fatto il {today['title']}. Ecco i carichi per il prossimo:"
-        else:
-            intro = f"Oggi: {today['title']}. Per la prossima palestra:"
-        sections.append((intro + "\n" if intro else "") + loads(which))
+        intro = ""
+        if plan["done_today"] and plan["last_workout"]:
+            intro = f"Oggi hai già fatto il {plan['last_workout']['title']}. Ecco i carichi per il prossimo:\n"
+        sections.append(intro + loads(plan["next_workout"]))
     if not sections:
-        today = plan["today"]
         status = (f" Stanotte {_duration(last_night['sleep_seconds'])} di sonno, readiness {_kg(last_night['readiness_score'])}."
                   if last_night else "")
         sections.append(
-            f"Oggi è in programma {today['title']}.{status} Chiedimi i carichi di oggi, come stai recuperando "
-            "o com'è andata la settimana."
+            f"{_next_line(plan)}{status} Chiedimi i carichi, come stai recuperando o com'è andata la settimana."
         )
     return "\n\n".join([*sections, OFFLINE_NOTE])
 
@@ -230,12 +239,28 @@ def _post_json(url: str, payload: dict[str, Any], headers: dict[str, str], timeo
         return json.loads(response.read().decode())
 
 
+def _get_json(url: str, timeout: float) -> dict[str, Any]:
+    with urllib.request.urlopen(url, timeout=timeout) as response:
+        return json.loads(response.read().decode())
+
+
+def _llm_error(exc: Exception, service: str) -> CoachUnavailable:
+    if isinstance(exc, urllib.error.HTTPError):
+        detail = exc.read().decode(errors="replace")[:300]
+        return CoachUnavailable(f"{service} ha risposto con un errore ({exc.code}): {detail}")
+    return CoachUnavailable(f"{service} non raggiungibile: {exc}")
+
+
 class LLMClient:
-    """OpenAI-compatible chat completions (OpenAI, Gemini, Anthropic, OpenRouter, Ollama…)."""
+    """OpenAI-compatible chat completions (OpenAI, Gemini, Anthropic, OpenRouter…), for paid API keys."""
 
     def __init__(self, settings: Settings, post: Callable[..., dict[str, Any]] = _post_json) -> None:
         self.settings = settings
         self._post = post
+
+    @property
+    def model(self) -> str | None:
+        return self.settings.llm_model
 
     def complete(self, messages: list[dict[str, str]]) -> str:
         try:
@@ -245,15 +270,112 @@ class LLMClient:
                 {"Authorization": f"Bearer {self.settings.llm_api_key}"},
                 self.settings.llm_timeout_s,
             )
-        except urllib.error.HTTPError as exc:
-            detail = exc.read().decode(errors="replace")[:300]
-            raise CoachUnavailable(f"Il modello AI ha risposto con un errore ({exc.code}): {detail}") from exc
         except (urllib.error.URLError, TimeoutError) as exc:
-            raise CoachUnavailable(f"Modello AI non raggiungibile: {exc}") from exc
+            raise _llm_error(exc, "Il modello AI") from exc
         try:
             return str(data["choices"][0]["message"]["content"]).strip()
         except (KeyError, IndexError, TypeError) as exc:
             raise CoachUnavailable("Risposta del modello AI in un formato inatteso.") from exc
+
+
+class OllamaClient:
+    """A local Ollama server: free, no account, the data never leaves the computer."""
+
+    _CACHE_S = 30.0
+
+    def __init__(
+        self,
+        settings: Settings,
+        get: Callable[..., dict[str, Any]] = _get_json,
+        post: Callable[..., dict[str, Any]] = _post_json,
+    ) -> None:
+        self.settings = settings
+        self._get = get
+        self._post = post
+        self._checked_at = float("-inf")
+        self._model: str | None = None
+
+    @property
+    def model(self) -> str | None:
+        """The model to chat with, or None when Ollama isn't running or has no chat model installed."""
+        if time.monotonic() - self._checked_at > self._CACHE_S:
+            self._model = self._find_model()
+            self._checked_at = time.monotonic()
+        return self._model
+
+    def _find_model(self) -> str | None:
+        try:
+            tags = self._get(f"{self.settings.ollama_url}/api/tags", 2.0)
+        except (urllib.error.URLError, TimeoutError, OSError, ValueError):
+            return None
+        installed = [m.get("name", "") for m in tags.get("models") or [] if "embed" not in m.get("name", "")]
+        wanted = self.settings.ollama_model
+        if wanted:
+            matches = [n for n in installed if n == wanted or n == f"{wanted}:latest"]
+            return matches[0] if matches else None
+        for family in PREFERRED_OLLAMA_MODELS:
+            for name in installed:
+                if name.startswith(family):
+                    return name
+        return installed[0] if installed else None
+
+    def complete(self, messages: list[dict[str, str]]) -> str:
+        model = self.model
+        if model is None:
+            raise CoachUnavailable("Ollama non è attivo o non ha modelli installati.")
+        try:
+            data = self._post(
+                f"{self.settings.ollama_url}/api/chat",
+                {
+                    "model": model,
+                    "messages": messages,
+                    "stream": False,
+                    # Thinking models (e.g. Qwen 3) would otherwise spend a long time reasoning before answering.
+                    "think": False,
+                    "options": {"num_ctx": self.settings.ollama_num_ctx},
+                },
+                {},
+                self.settings.llm_timeout_s,
+            )
+        except (urllib.error.URLError, TimeoutError) as exc:
+            self._checked_at = float("-inf")
+            raise _llm_error(exc, "Ollama") from exc
+        try:
+            content = str(data["message"]["content"])
+        except (KeyError, TypeError) as exc:
+            raise CoachUnavailable("Risposta di Ollama in un formato inatteso.") from exc
+        return re.sub(r"<think>.*?</think>", "", content, flags=re.DOTALL).strip()
+
+
+class Coach:
+    """Picks who answers: a paid API if configured, else a local Ollama model, else offline rules."""
+
+    def __init__(self, settings: Settings, api: LLMClient | None = None, ollama: OllamaClient | None = None) -> None:
+        self.settings = settings
+        self.api = api or LLMClient(settings)
+        self.ollama = ollama or OllamaClient(settings)
+
+    def status(self) -> dict[str, str | None]:
+        if self.settings.llm_api_key and self.settings.llm_model:
+            return {"mode": "api", "model": self.settings.llm_model}
+        model = self.ollama.model
+        return {"mode": "ollama", "model": model} if model else {"mode": "offline", "model": None}
+
+    def reply(self, db: Database, text: str, *, today: date) -> list[dict[str, Any]]:
+        """Store the user's message, answer it and store the answer. Returns both messages."""
+        history = chat_history(db, limit=self.settings.chat_history_messages)
+        user_message = _add_message(db, "user", text)
+        snapshot = build_snapshot(db, self.settings, today)
+        mode = self.status()["mode"]
+        if mode == "offline":
+            answer = offline_reply(text, snapshot)
+        else:
+            client = self.api if mode == "api" else self.ollama
+            messages = [{"role": "system", "content": system_prompt(snapshot)}]
+            messages += [{"role": m["role"], "content": m["content"]} for m in history]
+            messages.append({"role": "user", "content": text})
+            answer = client.complete(messages)
+        return [user_message, _add_message(db, "assistant", answer)]
 
 
 def _now_utc() -> str:
@@ -281,21 +403,3 @@ def _add_message(db: Database, role: str, content: str) -> dict[str, Any]:
 def clear_chat(db: Database) -> None:
     with db.connect() as conn:
         conn.execute("DELETE FROM chat_messages")
-
-
-def reply(
-    db: Database, settings: Settings, text: str, *, today: date, llm: LLMClient | None = None
-) -> list[dict[str, Any]]:
-    """Store the user's message, answer it and store the answer. Returns both messages."""
-    history = chat_history(db, limit=settings.chat_history_messages)
-    user_message = _add_message(db, "user", text)
-    snapshot = build_snapshot(db, settings, today)
-    if settings.llm_configured:
-        client = llm or LLMClient(settings)
-        messages = [{"role": "system", "content": system_prompt(snapshot)}]
-        messages += [{"role": m["role"], "content": m["content"]} for m in history]
-        messages.append({"role": "user", "content": text})
-        answer = client.complete(messages)
-    else:
-        answer = offline_reply(text, snapshot)
-    return [user_message, _add_message(db, "assistant", answer)]

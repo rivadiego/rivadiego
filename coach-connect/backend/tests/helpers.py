@@ -1,9 +1,22 @@
 from __future__ import annotations
 
+import urllib.error
 from datetime import datetime, timedelta
 from typing import Any
 
+from coach_connect.coach import Coach, OllamaClient
+from coach_connect.config import Settings
+
 NEWEST = datetime(2026, 10, 20, 7, 0, 0)
+
+
+def no_ollama(url: str, timeout: float) -> dict[str, Any]:
+    raise urllib.error.URLError("connection refused")
+
+
+def offline_coach(settings: Settings) -> Coach:
+    """A coach that never reaches a real Ollama running on the developer's machine."""
+    return Coach(settings, ollama=OllamaClient(settings, get=no_ollama))
 
 
 def make_raw(

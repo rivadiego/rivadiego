@@ -1,28 +1,14 @@
-"""The training plan ("Scheda Hybrid Athlete") as data, plus the calendar logic around it."""
+"""The training plan ("Scheda Hybrid Athlete") as data: workouts A and B, alternating."""
 
 from __future__ import annotations
 
-from datetime import date, timedelta
 from typing import Any
 
 from .exercises import EXERCISES
 
 GYM = ("A", "B")
 WEEKDAYS = ("Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica")
-
-# Two-week rotation, Monday first: gym every other day with A and B alternating, two runs.
-ROTATION = (
-    ("A", "run_quality", "B", "rest", "A", "rest", "run_long"),
-    ("B", "run_quality", "A", "rest", "B", "rest", "run_long"),
-)
-
-SESSIONS = {
-    "A": {"title": "Workout A · Push", "short": "A", "kind": "gym"},
-    "B": {"title": "Workout B · Pull", "short": "B", "kind": "gym"},
-    "run_quality": {"title": "Corsa · Qualità", "short": "Q", "kind": "run", "description": "Ripetute, tempo o fartlek"},
-    "run_long": {"title": "Corsa · Lungo", "short": "L", "kind": "run", "description": "Ritmo facile e costante"},
-    "rest": {"title": "Riposo", "short": "–", "kind": "rest"},
-}
+WEEKLY_TARGET = {"gym": 3, "run": 2}
 
 
 def _rpt(exercise_id: str, reps: list[int], cue: str) -> dict[str, Any]:
@@ -87,24 +73,8 @@ RULES = [
     {"title": "Progressione complementari", "text": "Stesso peso finché fai il massimo delle ripetizioni in tutte le serie, poi aumenti il carico."},
     {"title": "Tecnica prima del carico", "text": "Se per chiudere le ripetizioni serve lo slancio, il peso è troppo alto."},
     {"title": "Se sei stanco", "text": "Accorcia i complementari, non i principali. La panca inclinata va sempre per prima, a mente fresca."},
+    {"title": "Quando la scheda diventa facile", "text": "Varianti: military press al posto della panca manubri, pull-up al posto dei chin-up, curl su panca inclinata, French press al cavo."},
 ]
-
-PHASES = [
-    {"from_week": 1, "to_week": 3, "name": "Ripresa",
-     "text": "3 serie con lo stesso carico, 2-3 ripetizioni dal cedimento. Niente RPT: tendini e spalle si riabituano."},
-    {"from_week": 4, "to_week": 12, "name": "RPT pieno",
-     "text": "Schema RPT sui principali e progressione costante. Qui si costruisce la forza."},
-    {"from_week": 13, "to_week": None, "name": "Variante",
-     "text": "Military press al posto della panca manubri, pull-up al posto dei chin-up, curl su panca inclinata, French press al cavo."},
-]
-
-# Substitutions applied from week 13.
-VARIANTS = {
-    "dumbbell_bench_press": "military_press",
-    "weighted_chin_up": "weighted_pull_up",
-    "barbell_curl": "incline_dumbbell_curl",
-    "cable_pushdown": "cable_french_press",
-}
 
 NUTRITION = [
     "Circa 140 g di proteine al giorno (2 g per kg), distribuite su 3-4 pasti.",
@@ -113,38 +83,12 @@ NUTRITION = [
 ]
 
 
-def monday_of(day: date) -> date:
-    return day - timedelta(days=day.weekday())
+def other_workout(which: str) -> str:
+    return "B" if which == "A" else "A"
 
 
-def week_number(start: date, day: date) -> int:
-    """1-based program week of `day`, counting from the Monday of the start week."""
-    return max(1, (monday_of(day) - monday_of(start)).days // 7 + 1)
-
-
-def rotation_session(start: date, day: date) -> str:
-    return ROTATION[(week_number(start, day) - 1) % 2][day.weekday()]
-
-
-def phase_for(week: int) -> dict[str, Any]:
-    for phase in PHASES:
-        if week >= phase["from_week"] and (phase["to_week"] is None or week <= phase["to_week"]):
-            return phase
-    return PHASES[0]
-
-
-def is_ramp_up(week: int) -> bool:
-    return phase_for(week)["name"] == "Ripresa"
-
-
-def workout_exercises(which: str, week: int) -> list[dict[str, Any]]:
-    """Exercises of workout A or B for a program week, with the week-13 variants applied."""
-    variant = week >= PHASES[-1]["from_week"]
-    exercises = []
-    for item in WORKOUTS[which]["exercises"]:
-        exercise_id = VARIANTS.get(item["exercise_id"], item["exercise_id"]) if variant else item["exercise_id"]
-        exercises.append({**item, "exercise_id": exercise_id, "name": EXERCISES[exercise_id].name})
-    return exercises
+def workout_exercises(which: str) -> list[dict[str, Any]]:
+    return [{**item, "name": EXERCISES[item["exercise_id"]].name} for item in WORKOUTS[which]["exercises"]]
 
 
 def scheme_label(item: dict[str, Any]) -> str:
