@@ -18,7 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { RichText } from '@/components/rich-text';
 import { colors, maxContentWidth, radius, spacing } from '@/constants/theme';
-import { api, describeError, type ChatMessage, type CoachStatus, type Wellness } from '@/lib/api';
+import { api, describeError, isOnlineSite, type ChatMessage, type CoachStatus, type Wellness } from '@/lib/api';
 import { formatSleep } from '@/lib/format';
 
 const SUGGESTIONS = [
@@ -155,8 +155,11 @@ export default function CoachScreen() {
           )}
           {coach?.mode === 'offline' && (
             <Text style={styles.offline}>
-              Coach offline: risposte automatiche dai tuoi dati. Per il coach AI gratuito installa Ollama sul computer
-              del backend (vedi README).
+              {isOnlineSite
+                ? 'Coach offline: risposte automatiche dai tuoi dati. Per il coach AI gratuito collega GitHub Models ' +
+                  '(istruzioni nel README).'
+                : 'Coach offline: risposte automatiche dai tuoi dati. Per il coach AI gratuito installa Ollama sul ' +
+                  'computer del backend (vedi README).'}
             </Text>
           )}
           {coach?.mode === 'ollama' && (

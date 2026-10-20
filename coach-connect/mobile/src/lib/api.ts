@@ -176,7 +176,7 @@ export class ApiError extends Error {
 
 const isWeb = Platform.OS === 'web' && typeof window !== 'undefined';
 /** The site published online, as opposed to the Expo dev server. */
-const isOnlineSite = isWeb && !__DEV__;
+export const isOnlineSite = isWeb && !__DEV__;
 
 export function apiBaseUrl(): string {
   const configured = process.env.EXPO_PUBLIC_API_URL;

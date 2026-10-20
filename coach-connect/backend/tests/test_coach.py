@@ -1,3 +1,4 @@
+import re
 import urllib.error
 from datetime import date
 
@@ -146,6 +147,21 @@ def test_paid_api_request_format(demo_db):
     url, payload, headers = calls[-1]
     assert url == "https://llm.example/v1/chat/completions"
     assert headers["Authorization"] == "Bearer sk-test" and payload["model"] == "test-model"
+
+
+@pytest.mark.parametrize(
+    ("status", "expected"),
+    [(401, "rifiuta la chiave"), (413, "Nuova chat"), (429, "chiede una pausa"), (500, "errore (500)")],
+)
+def test_api_errors_are_explained(demo_db, status, expected):
+    settings = Settings(llm_api_key="github_pat_x", llm_model="openai/gpt-4.1", llm_base_url="https://models.example")
+
+    def failing_post(url, payload, headers, timeout):
+        raise urllib.error.HTTPError(url, status, "error", {}, None)
+
+    trainer = Coach(settings, api=LLMClient(settings, post=failing_post), ollama=OllamaClient(settings, get=no_ollama))
+    with pytest.raises(CoachUnavailable, match=re.escape(expected)):
+        trainer.reply(demo_db, "Che carichi oggi?", today=TODAY)
 
 
 def test_chat_endpoints_offline(tmp_path):

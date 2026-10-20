@@ -22,8 +22,8 @@ from .workouts import done_by_day, feed, workouts_since
 MONTHS = ("gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre", "ottobre",
           "novembre", "dicembre")
 OFFLINE_NOTE = (
-    "*Coach offline: rispondo con regole automatiche sui tuoi dati. Per il coach AI gratuito installa Ollama "
-    "sul computer del backend (vedi README).*"
+    "*Coach offline: rispondo con regole automatiche sui tuoi dati. Per il coach AI gratuito collega GitHub Models "
+    "al sito online, oppure installa Ollama sul computer del backend (vedi README).*"
 )
 # Families that chat well in Italian, tried in this order when OLLAMA_MODEL isn't set.
 PREFERRED_OLLAMA_MODELS = ("qwen3", "qwen", "gemma", "llama", "mistral", "phi")
@@ -246,6 +246,15 @@ def _get_json(url: str, timeout: float) -> dict[str, Any]:
 
 def _llm_error(exc: Exception, service: str) -> CoachUnavailable:
     if isinstance(exc, urllib.error.HTTPError):
+        if exc.code in (401, 403):
+            return CoachUnavailable(f"{service} rifiuta la chiave: è scaduta o non ha il permesso giusto.")
+        if exc.code == 413:
+            return CoachUnavailable("La conversazione è troppo lunga per il modello AI: tocca Nuova chat e riprova.")
+        if exc.code == 429:
+            return CoachUnavailable(
+                "Hai fatto tante domande in poco tempo e il servizio AI chiede una pausa: riprova tra un po' "
+                "(il piano gratuito ha un limite al minuto e uno al giorno)."
+            )
         detail = exc.read().decode(errors="replace")[:300]
         return CoachUnavailable(f"{service} ha risposto con un errore ({exc.code}): {detail}")
     return CoachUnavailable(f"{service} non raggiungibile: {exc}")
