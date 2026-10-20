@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Avvia Coach Connect con un solo comando: prepara backend e app, collega Garmin e mostra il QR per Expo Go.
 
-    python3 coach-connect/start.py          # con i tuoi dati Garmin
+    python3 coach-connect/start.py          # con i tuoi dati Garmin (Windows: python coach-connect\\start.py)
     python3 coach-connect/start.py --demo   # con dati finti
 """
 
@@ -63,14 +63,16 @@ def find_python() -> list[str]:
                                capture_output=True, text=True)
         if check.stdout.strip() == "True":
             return cmd
-    fail("Serve Python 3.12 o più recente: https://www.python.org/downloads/ (su Mac anche `brew install python@3.13`).")
+    fail("Serve Python 3.12 o più recente: https://www.python.org/downloads/ (su Windows anche dal Microsoft Store, "
+         "su Mac con `brew install python@3.13`).")
     return []
 
 
 def check_node() -> None:
     node = shutil.which("node")
     if node is None or shutil.which("npm") is None:
-        fail("Serve Node.js 22 o più recente: https://nodejs.org (su Mac anche `brew install node`).")
+        fail("Serve Node.js 22 o più recente: https://nodejs.org (versione LTS). Dopo l'installazione chiudi e riapri "
+             "il terminale.")
     version = subprocess.run([node, "--version"], capture_output=True, text=True).stdout.strip().lstrip("v")
     if int(version.split(".")[0]) < 22:
         fail(f"Hai Node.js {version}: serve la 22 o più recente (https://nodejs.org).")

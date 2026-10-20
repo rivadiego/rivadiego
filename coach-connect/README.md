@@ -9,12 +9,14 @@ App personale per il mio allenamento ibrido (palestra + corsa) sui dati Garmin:
 
 ## Avvio rapido
 
-Servono Python 3.12+ ([python.org](https://www.python.org/downloads/), consigliato 3.13), Node.js 22+ ([nodejs.org](https://nodejs.org)) e l'app **Expo Go** sull'iPhone. Poi, dalla cartella del repository:
+Servono Python 3.12+ ([python.org](https://www.python.org/downloads/), consigliato 3.13; su Windows anche dal Microsoft Store), Node.js 22+ ([nodejs.org](https://nodejs.org)) e l'app **Expo Go** sull'iPhone. Poi, dalla cartella del repository:
 
 ```bash
-python3 coach-connect/start.py          # con i tuoi dati Garmin (Windows: py coach-connect\start.py)
+python3 coach-connect/start.py          # con i tuoi dati Garmin (Windows: python coach-connect\start.py)
 python3 coach-connect/start.py --demo   # per provare con dati finti
 ```
+
+Su Windows, dopo aver installato Python o Node.js chiudi e riapri PowerShell, e quando Windows Firewall lo chiede consenti l'accesso sulle reti private: serve perché l'iPhone raggiunga il computer.
 
 Lo script prepara backend e app, la prima volta ti chiede nome, altezza, peso e il login Garmin (con il codice di verifica se attivo), scarica attività e parametri vitali e mostra un QR code: inquadralo con la Fotocamera dell'iPhone e l'app si apre in Expo Go. iPhone e computer devono essere sulla stessa rete Wi-Fi. Ctrl+C chiude tutto; le volte successive basta rilanciare lo stesso comando.
 
