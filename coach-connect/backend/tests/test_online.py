@@ -231,6 +231,17 @@ def test_backend_serves_the_web_app(tmp_path):
     assert client.get("/docs").status_code == 200
 
 
+def test_guessing_the_access_code_is_slowed_down(tmp_path, monkeypatch):
+    monkeypatch.setattr(api_module, "WRONG_CODES_LIMIT", 3)
+    settings = Settings(db_path=tmp_path / "api.db", api_token="codice-giusto")
+    client = TestClient(create_app(settings, FakeSource([]), offline_coach(settings)))
+    wrong = {"Authorization": "Bearer tentativo"}
+
+    assert [client.get("/api/status", headers=wrong).status_code for _ in range(5)] == [401, 401, 401, 429, 429]
+    assert client.get("/api/status").status_code == 401
+    assert client.get("/api/status", headers={"Authorization": "Bearer codice-giusto"}).status_code == 200
+
+
 def test_serving_the_site_requires_the_access_code(tmp_path):
     settings = Settings(db_path=tmp_path / "api.db", web_dir=tmp_path / "web")
 

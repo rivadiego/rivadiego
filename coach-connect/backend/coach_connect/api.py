@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import secrets
+import threading
+import time
+from collections import deque
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from dataclasses import asdict
@@ -29,6 +32,10 @@ from .sources import ActivitySource, GarminSource, SourceError, brief, build_sou
 from .sync import HISTORY_COMPLETE, LAST_SYNC_AT, SyncInProgress, Syncer
 from .wellness import wellness_rows
 from .workouts import create_workout, delete_workout, feed, feed_count, get_workout
+
+# Online the access code is the only lock: past this many wrong codes in the window, wrong codes get 429.
+WRONG_CODES_LIMIT = 30
+WRONG_CODES_WINDOW_S = 600.0
 
 
 class Activity(BaseModel):
@@ -229,12 +236,25 @@ def create_app(
         allow_headers=["Authorization", "Content-Type"],
     )
 
+    wrong_codes: deque[float] = deque()
+    wrong_codes_lock = threading.Lock()
+
     def require_token(authorization: str | None = Header(default=None)) -> None:
         if settings.api_token is None:
             return
-        expected = f"Bearer {settings.api_token}"
-        if not authorization or not secrets.compare_digest(authorization, expected):
-            raise HTTPException(status_code=401, detail="Token API mancante o non valido")
+        if authorization and secrets.compare_digest(authorization, f"Bearer {settings.api_token}"):
+            return
+        # A missing code is the app asking for it, not a guess.
+        if authorization:
+            now = time.monotonic()
+            with wrong_codes_lock:
+                while wrong_codes and now - wrong_codes[0] > WRONG_CODES_WINDOW_S:
+                    wrong_codes.popleft()
+                wrong_codes.append(now)
+                too_many = len(wrong_codes) > WRONG_CODES_LIMIT
+            if too_many:
+                raise HTTPException(status_code=429, detail="Troppi codici sbagliati: riprova tra qualche minuto.")
+        raise HTTPException(status_code=401, detail="Token API mancante o non valido")
 
     @app.exception_handler(SourceError)
     async def source_error(_: Request, exc: SourceError) -> JSONResponse:
