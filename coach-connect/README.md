@@ -15,7 +15,7 @@ Il sito gira su [Hugging Face Spaces](https://huggingface.co/spaces) (piano grat
 2. Sul repository GitHub apri **Settings → Secrets and variables → Actions** e aggiungi due *repository secret*:
    - `HF_TOKEN`: il token di Hugging Face;
    - `COACH_ACCESS_CODE`: un codice di accesso scelto da te, di almeno 8 caratteri (per esempio una frase). Lo chiede l'app.
-3. Avvia la pubblicazione: **Actions → Coach Connect online → Run workflow** (le volte successive parte da sola). In 5-10 minuti il log finisce con l'indirizzo, del tipo `https://<utente>-coach-connect.hf.space`.
+3. Avvia la pubblicazione: in **Actions** apri l'ultima esecuzione di **Coach Connect online** e premi **Re-run all jobs** (quando il workflow è su `main` c'è anche **Run workflow**); poi parte da sola a ogni modifica. In 5-10 minuti il log finisce con l'indirizzo, del tipo `https://<utente>-coach-connect.hf.space`.
 4. Sull'iPhone apri l'indirizzo in Safari e inserisci il codice, oppure apri direttamente `https://<utente>-coach-connect.hf.space/#codice=<il tuo codice>`. Poi **Condividi → Aggiungi alla schermata Home**: si apre a tutto schermo, come un'app.
 5. Nell'app tocca **Collega Garmin** (email, password e codice di verifica se attivo): la prima volta scarica tutto lo storico.
 
