@@ -171,12 +171,20 @@ export function apiBaseUrl(): string {
   if (configured) {
     return configured.replace(/\/+$/, '');
   }
+  if (__DEV__) {
+    // The Expo dev server forwards /api to the backend (metro.config.js), also through tunnels.
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      return window.location.origin;
+    }
+    const hostUri = Constants.expoConfig?.hostUri;
+    if (hostUri) {
+      return `http://${hostUri}`;
+    }
+  }
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     return `${window.location.protocol}//${window.location.hostname}:8000`;
   }
-  // In development the iPhone already reaches the computer running Expo: reuse its address.
-  const host = Constants.expoConfig?.hostUri?.split(':')[0];
-  return `http://${host ?? 'localhost'}:8000`;
+  return 'http://localhost:8000';
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -248,8 +256,8 @@ export function describeError(error: unknown): { title: string; message: string 
       return {
         title: 'Server non raggiungibile',
         message:
-          `Non riesco a contattare ${apiBaseUrl()}. Sul computer avvia ` +
-          '"python -m coach_connect serve" e tieni iPhone e computer sulla stessa rete Wi-Fi.',
+          `Non riesco a contattare ${apiBaseUrl()}. Sul computer avvia "coach-connect/start.py" e tieni iPhone ` +
+          'e computer sulla stessa rete Wi-Fi, oppure avvialo con --tunnel.',
       };
     case 'timeout':
       return { title: 'Il server non risponde', message: 'La richiesta ci sta mettendo troppo: riprova tra poco.' };
