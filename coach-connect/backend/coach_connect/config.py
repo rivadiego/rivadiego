@@ -51,8 +51,8 @@ class Settings:
     # Local models on a laptop CPU can take a while to answer.
     llm_timeout_s: float = 180.0
     chat_history_messages: int = 20
-    # Online (a Hugging Face Space): the built web app served by the backend, and a private dataset that keeps
-    # the database and the Garmin tokens, because the Space disk is wiped on every restart.
+    # Online: the built web app served by the backend, and a private Hugging Face dataset that keeps the database
+    # and the Garmin tokens, because the disk of a free online instance is wiped on every restart.
     web_dir: Path | None = None
     hf_token: str | None = None
     hf_data_repo: str | None = None

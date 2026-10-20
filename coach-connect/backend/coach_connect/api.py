@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 import secrets
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
@@ -189,8 +188,8 @@ def create_app(
     settings: Settings | None = None, source: ActivitySource | None = None, coach: Coach | None = None
 ) -> FastAPI:
     settings = settings or Settings.from_env()
-    if os.getenv("SPACE_ID") and not settings.api_token:
-        raise RuntimeError("Online serve API_TOKEN (il codice di accesso): senza, chiunque vedrebbe i tuoi dati.")
+    if settings.web_dir and not settings.api_token:
+        raise RuntimeError("Per servire il sito serve API_TOKEN (il codice di accesso): senza, chiunque vedrebbe i tuoi dati.")
     source = source or build_source(settings)
     coach = coach or Coach(settings)
     backup = cloud_backup(settings)

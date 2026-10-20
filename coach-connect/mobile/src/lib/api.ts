@@ -290,7 +290,7 @@ export function describeError(error: unknown): { title: string; message: string 
       if (isOnlineSite) {
         return {
           title: 'Il sito non risponde',
-          message: 'Se non lo aprivi da un paio di giorni si sta riaccendendo: riprova tra un minuto.',
+          message: 'Se non lo aprivi da un po’ il server si sta riaccendendo: riprova tra un minuto.',
         };
       }
       return {

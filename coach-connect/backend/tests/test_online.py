@@ -231,9 +231,8 @@ def test_backend_serves_the_web_app(tmp_path):
     assert client.get("/docs").status_code == 200
 
 
-def test_online_the_access_code_is_mandatory(tmp_path, monkeypatch):
-    monkeypatch.setenv("SPACE_ID", "me/coach-connect")
-    settings = Settings(db_path=tmp_path / "api.db")
+def test_serving_the_site_requires_the_access_code(tmp_path):
+    settings = Settings(db_path=tmp_path / "api.db", web_dir=tmp_path / "web")
 
     with pytest.raises(RuntimeError, match="API_TOKEN"):
         create_app(settings, FakeSource([]), offline_coach(settings))
