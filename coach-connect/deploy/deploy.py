@@ -13,7 +13,8 @@ Variabili d'ambiente per --publish:
     HF_TOKEN            token Hugging Face con permesso "write", per il dataset dei dati
     COACH_ACCESS_CODE   codice di accesso dell'app (almeno 8 caratteri)
     GITHUB_REPOSITORY   repository da cui Render costruisce (lo imposta GitHub)
-    LLM_BASE_URL, LLM_MODEL, LLM_API_KEY   facoltative: coach AI con un servizio compatibile OpenAI
+    GH_MODELS_TOKEN     facoltativa: coach AI gratuito con GitHub Models (token con il permesso "Models")
+    LLM_BASE_URL, LLM_MODEL, LLM_API_KEY   facoltative: coach AI con un altro servizio compatibile OpenAI
 """
 
 from __future__ import annotations
@@ -36,6 +37,9 @@ SERVICE_NAME = "coach-connect"
 DEPLOY_BRANCH = "deploy/coach-connect"
 WAIT_S = 25 * 60
 FAILED = {"build_failed", "update_failed", "pre_deploy_failed", "canceled", "deactivated"}
+GITHUB_MODELS = "https://models.github.ai"
+# Good in Italian and within the free daily limits (50 to 150 questions a day): the first one in the catalog wins.
+PREFERRED_MODELS = ("openai/gpt-4.1", "openai/gpt-4.1-mini", "openai/gpt-4o", "openai/gpt-4o-mini")
 BRANCH_README = """# Coach Connect: versione pubblicata
 
 Ramo generato dalla GitHub Action "Coach Connect online": Render costruisce il servizio da qui.
@@ -54,9 +58,14 @@ def stage(web_dir: Path, target: Path) -> None:
 
 
 def send(
-    method: str, url: str, token: str | None = None, body: Any = None, timeout: float = 60
+    method: str,
+    url: str,
+    token: str | None = None,
+    body: Any = None,
+    timeout: float = 60,
+    extra_headers: dict[str, str] | None = None,
 ) -> tuple[int, dict[str, str], str]:
-    headers = {"Accept": "application/json"}
+    headers = {"Accept": "application/json", **(extra_headers or {})}
     if token:
         headers["Authorization"] = f"Bearer {token}"
     data = None
@@ -74,8 +83,15 @@ def send(
         return 0, {}, str(exc)
 
 
-def request(method: str, url: str, token: str | None = None, body: Any = None, timeout: float = 60) -> tuple[int, Any]:
-    status, _, text = send(method, url, token, body, timeout)
+def request(
+    method: str,
+    url: str,
+    token: str | None = None,
+    body: Any = None,
+    timeout: float = 60,
+    extra_headers: dict[str, str] | None = None,
+) -> tuple[int, Any]:
+    status, _, text = send(method, url, token, body, timeout, extra_headers)
     try:
         return status, json.loads(text)
     except json.JSONDecodeError:
@@ -107,6 +123,39 @@ class Render:
         print(f"--- ultimi log di Render{f' ({kind})' if kind else ''} ---")
         lines = [entry.get("message", "") for entry in reversed(logs)]
         print("\n".join(lines) or f"(log non disponibili: {status} {str(payload)[:200]})")
+
+
+def github_models(token: str) -> list[dict[str, str]]:
+    """Coach AI with GitHub Models: the best model in the catalog, checked with a test question."""
+    rejected = "GH_MODELS_TOKEN non funziona ({}): serve un token con il permesso «Models: Read-only»."
+    catalog_headers = {"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"}
+    status, catalog = request("GET", f"{GITHUB_MODELS}/catalog/models", token, extra_headers=catalog_headers)
+    if status in (401, 403):
+        sys.exit(rejected.format(status))
+    if status == 200 and isinstance(catalog, list):
+        available = {str(m["id"]).lower(): str(m["id"]) for m in catalog if isinstance(m, dict) and m.get("id")}
+        model = next((available[name] for name in PREFERRED_MODELS if name in available), None)
+        if model is None:
+            sys.exit(f"Nessuno dei modelli previsti è nel catalogo di GitHub Models: {sorted(available)[:30]}")
+    else:
+        model = PREFERRED_MODELS[0]
+        print(f"::warning::Catalogo di GitHub Models non disponibile ({status}): uso {model} senza controllarlo.")
+    # A busy or exhausted free quota must not block publishing the rest of the app: only a bad token does.
+    question = {"model": model, "messages": [{"role": "user", "content": "Rispondi solo con: ok"}]}
+    status, answer = request("POST", f"{GITHUB_MODELS}/inference/chat/completions", token, question)
+    if status in (401, 403):
+        sys.exit(rejected.format(status))
+    if status == 200:
+        print(f"Coach AI: {model} con GitHub Models, domanda di prova ok.")
+    else:
+        print(f"::warning::Domanda di prova a {model} non riuscita ({status}): {str(answer)[:200]}")
+    return [
+        {"key": "LLM_BASE_URL", "value": f"{GITHUB_MODELS}/inference"},
+        {"key": "LLM_API_KEY", "value": token},
+        {"key": "LLM_MODEL", "value": model},
+        # The free plan takes 8000 tokens per question: the training context plus a shorter chat history.
+        {"key": "CHAT_HISTORY_MESSAGES", "value": "12"},
+    ]
 
 
 def wait_for_deploy(render: Render, owner_id: str, service_id: str, deploy_id: str) -> None:
@@ -158,7 +207,12 @@ def publish(web_entry: str) -> None:
         {"key": "HF_TOKEN", "value": hf_token},
         {"key": "HF_DATA_REPO", "value": data_repo},
     ]
-    env_vars += [{"key": k, "value": os.environ[k]} for k in ("LLM_BASE_URL", "LLM_MODEL", "LLM_API_KEY") if os.getenv(k)]
+    if os.getenv("LLM_API_KEY"):
+        env_vars += [{"key": k, "value": os.environ[k]} for k in ("LLM_BASE_URL", "LLM_MODEL", "LLM_API_KEY") if os.getenv(k)]
+    elif os.getenv("GH_MODELS_TOKEN"):
+        env_vars += github_models(os.environ["GH_MODELS_TOKEN"])
+    else:
+        print("Coach AI: nessun GH_MODELS_TOKEN, il coach risponde in modalità offline.")
 
     render = Render(key)
     owner_id = render("GET", "/owners?limit=20")[0]["owner"]["id"]
@@ -214,8 +268,10 @@ def publish(web_entry: str) -> None:
         sys.exit(f"Il salvataggio sul dataset privato non funziona ({saved}): {detail}")
     # These logs are public on a public repository: nothing personal beyond this.
     print(f"Online: {url}")
+    coach = info["coach"]
+    model = f" ({coach['model']})" if coach.get("model") else ""
     print(f"API protetta dal codice, salvataggio sul dataset privato ok. "
-          f"Garmin collegato: {'sì' if info['garmin_ready'] else 'no'}.")
+          f"Garmin collegato: {'sì' if info['garmin_ready'] else 'no'}. Coach: {coach['mode']}{model}.")
 
 
 def main() -> int:
