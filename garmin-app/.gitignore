@@ -1,0 +1,13 @@
+# Python
+backend/.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Personal data and secrets: never commit them, this repository is public
+backend/data/
+.env
+*.db
+*.db-shm
+*.db-wal
+garmin_tokens.json
