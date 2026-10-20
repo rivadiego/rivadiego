@@ -7,6 +7,17 @@ App personale per il mio allenamento ibrido (palestra + corsa) sui dati Garmin:
 - **Scheda**: la scheda Hybrid Athlete con il prossimo allenamento (Workout A o B) e i carichi da fare la prossima volta.
 - **Coach**: chat da personal trainer che vede scheda, allenamenti e parametri vitali (sonno, HRV, Body Battery, readiness…) degli ultimi 14 giorni. Gratis con Ollama sul tuo computer, oppure dentro Cursor.
 
+## Avvio rapido
+
+Servono Python 3.12+ ([python.org](https://www.python.org/downloads/), consigliato 3.13), Node.js 22+ ([nodejs.org](https://nodejs.org)) e l'app **Expo Go** sull'iPhone. Poi, dalla cartella del repository:
+
+```bash
+python3 coach-connect/start.py          # con i tuoi dati Garmin (Windows: py coach-connect\start.py)
+python3 coach-connect/start.py --demo   # per provare con dati finti
+```
+
+Lo script prepara backend e app, la prima volta ti chiede nome, altezza, peso e il login Garmin (con il codice di verifica se attivo), scarica attività e parametri vitali e mostra un QR code: inquadralo con la Fotocamera dell'iPhone e l'app si apre in Expo Go. iPhone e computer devono essere sulla stessa rete Wi-Fi. Ctrl+C chiude tutto; le volte successive basta rilanciare lo stesso comando.
+
 ## Come funziona
 
 ```
