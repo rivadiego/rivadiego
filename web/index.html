@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>Coach Connect</title>
+    <!-- Added to the iPhone home screen it opens full screen, like an app. -->
+    <meta name="theme-color" content="#000000" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="Coach" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <script>
+      // A link ending in #codice=… saves the access code on this device. It runs before the app so the
+      // router never sees the code, and the code leaves the address bar. Same key as src/lib/api.ts.
+      (function () {
+        var match = /codice=([^&]+)/.exec(location.hash);
+        if (!match) return;
+        try {
+          localStorage.setItem('coach-connect-access-code', decodeURIComponent(match[1]));
+        } catch (error) {}
+        history.replaceState(null, '', location.pathname + location.search);
+      })();
+    </script>
+    <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
+    <style id="expo-reset">
+      /* These styles make the body full-height */
+      html,
+      body {
+        height: 100%;
+        background-color: #000000;
+      }
+      /* These styles disable body scrolling if you are using <ScrollView> */
+      body {
+        overflow: hidden;
+      }
+      /* These styles make the root element full-height */
+      #root {
+        display: flex;
+        height: 100%;
+        flex: 1;
+      }
+    </style>
+  <link rel="icon" href="/favicon.ico"/></head>
+
+  <body>
+    <noscript>Per usare Coach Connect serve JavaScript.</noscript>
+    <div id="root"></div>
+  <script src="/_expo/static/js/web/__expo-metro-runtime-8c088df87a31e4e6accd81c554ec290d.js" defer></script><script src="/_expo/static/js/web/__common-1d537041977a2a3e73a55885356248ad.js" defer></script><script src="/_expo/static/js/web/entry-0a79345a44123c853ae43b24fe81115e.js" defer></script>
+</body>
+</html>
