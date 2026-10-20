@@ -5,13 +5,14 @@ import { ActivityIndicator, RefreshControl, SectionList, StyleSheet, Text, View 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ActivityCard } from '@/components/activity-card';
+import { ConnectGarminCard } from '@/components/connect-garmin-card';
 import { Fab } from '@/components/fab';
 import { NoticeBanner, type Notice } from '@/components/notice-banner';
 import { StateView } from '@/components/state-view';
 import { SyncButton } from '@/components/sync-button';
 import { colors, maxContentWidth, radius, spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
-import { api, describeError, type FeedItem, type FeedPage } from '@/lib/api';
+import { api, ApiError, describeError, type FeedItem, type FeedPage } from '@/lib/api';
 import { formatMonth, formatRelative, monthKey } from '@/lib/format';
 
 const PAGE_SIZE = 50;
@@ -30,6 +31,7 @@ export default function ActivitiesScreen() {
   const [syncing, setSyncing] = useState<SyncTrigger | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
+  const [garminReady, setGarminReady] = useState<boolean | null>(null);
 
   const applyFirstPage = useCallback((result: FeedPage) => {
     setItems(result.items);
@@ -45,7 +47,7 @@ export default function ActivitiesScreen() {
     loadFirstPage().catch(setLoadError);
   }, [loadFirstPage]);
 
-  // Reload whenever the tab comes back into view, e.g. after logging a workout.
+  // Reload whenever the tab comes back into view, e.g. after logging a workout or connecting Garmin.
   useFocusEffect(
     useCallback(() => {
       let active = true;
@@ -53,6 +55,10 @@ export default function ActivitiesScreen() {
         .feed(0, PAGE_SIZE)
         .then((result) => active && applyFirstPage(result))
         .catch((error: unknown) => active && setLoadError(error));
+      api
+        .status()
+        .then((status) => active && setGarminReady(status.garmin_ready))
+        .catch(() => {});
       return () => {
         active = false;
       };
@@ -88,6 +94,9 @@ export default function ActivitiesScreen() {
         }
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       } catch (error) {
+        if (error instanceof ApiError && error.code === 'garmin_not_authenticated') {
+          setGarminReady(false);
+        }
         setNotice({ tone: 'error', ...describeError(error) });
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       } finally {
@@ -205,6 +214,7 @@ export default function ActivitiesScreen() {
             {page?.mode === 'demo' && <Text style={styles.demoBadge}>DEMO</Text>}
           </View>
         </View>
+        {page?.mode === 'live' && garminReady === false && <ConnectGarminCard onPress={() => router.push('/garmin')} />}
         {notice && <NoticeBanner notice={notice} onDismiss={() => setNotice(null)} />}
         {content}
         <Fab accessibilityLabel="Registra un allenamento" onPress={() => router.push('/log')} />

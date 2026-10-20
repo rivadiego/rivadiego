@@ -153,6 +153,14 @@ export type ChatMessage = { id: number; role: 'user' | 'assistant'; content: str
 /** Who answers: a local Ollama model (free), a paid API, or offline rules. */
 export type CoachStatus = { mode: 'ollama' | 'api' | 'offline'; model: string | null };
 
+export type Status = {
+  mode: string;
+  garmin_ready: boolean;
+  activity_count: number;
+  last_sync_at: string | null;
+  coach: CoachStatus;
+};
+
 export type ChatState = { messages: ChatMessage[]; coach: CoachStatus };
 
 export class ApiError extends Error {
@@ -166,25 +174,43 @@ export class ApiError extends Error {
   }
 }
 
+const isWeb = Platform.OS === 'web' && typeof window !== 'undefined';
+/** The site published online, as opposed to the Expo dev server. */
+const isOnlineSite = isWeb && !__DEV__;
+
 export function apiBaseUrl(): string {
   const configured = process.env.EXPO_PUBLIC_API_URL;
   if (configured) {
     return configured.replace(/\/+$/, '');
   }
-  if (__DEV__) {
-    // The Expo dev server forwards /api to the backend (metro.config.js), also through tunnels.
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      return window.location.origin;
-    }
-    const hostUri = Constants.expoConfig?.hostUri;
-    if (hostUri) {
-      return `http://${hostUri}`;
-    }
+  // On the web the API is on the same address: online the backend serves the site, in development the
+  // Expo dev server forwards /api to it (metro.config.js), also through tunnels.
+  if (isWeb) {
+    return window.location.origin;
   }
-  if (Platform.OS === 'web' && typeof window !== 'undefined') {
-    return `${window.location.protocol}//${window.location.hostname}:8000`;
+  const hostUri = Constants.expoConfig?.hostUri;
+  return __DEV__ && hostUri ? `http://${hostUri}` : 'http://localhost:8000';
+}
+
+// Also written by public/index.html when the site is opened with a link ending in #codice=….
+const ACCESS_CODE_KEY = 'coach-connect-access-code';
+
+let accessCode = (isWeb ? window.localStorage.getItem(ACCESS_CODE_KEY) : null) ?? process.env.EXPO_PUBLIC_API_TOKEN ?? null;
+const unauthorizedListeners = new Set<() => void>();
+
+export function setAccessCode(code: string) {
+  accessCode = code;
+  if (isWeb) {
+    window.localStorage.setItem(ACCESS_CODE_KEY, code);
   }
-  return 'http://localhost:8000';
+}
+
+/** Called when the backend rejects the access code. */
+export function onUnauthorized(listener: () => void): () => void {
+  unauthorizedListeners.add(listener);
+  return () => {
+    unauthorizedListeners.delete(listener);
+  };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -192,7 +218,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 async function request<T>(path: string, init: RequestInit = {}, timeoutMs = 30_000): Promise<T> {
-  const token = process.env.EXPO_PUBLIC_API_TOKEN;
+  const token = accessCode;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   let response: Response;
@@ -218,6 +244,9 @@ async function request<T>(path: string, init: RequestInit = {}, timeoutMs = 30_0
   }
 
   const body: unknown = await response.json().catch(() => null);
+  if (response.status === 401) {
+    unauthorizedListeners.forEach((listener) => listener());
+  }
   if (!response.ok) {
     const detail = isRecord(body) && typeof body.detail === 'string' ? body.detail : `HTTP ${response.status}`;
     const code = isRecord(body) && typeof body.code === 'string' ? body.code : null;
@@ -229,6 +258,7 @@ async function request<T>(path: string, init: RequestInit = {}, timeoutMs = 30_0
 const post = (body: unknown): RequestInit => ({ method: 'POST', body: JSON.stringify(body) });
 
 export const api = {
+  status: () => request<Status>('/api/status'),
   feed: (offset = 0, limit = 50) => request<FeedPage>(`/api/feed?limit=${limit}&offset=${offset}`),
   // The first sync may import a long history, so it gets a generous timeout.
   sync: () => request<SyncResult>('/api/sync', { method: 'POST' }, 120_000),
@@ -242,6 +272,10 @@ export const api = {
   // A local model on a laptop can take a while to answer.
   sendChat: (content: string) => request<ChatState>('/api/chat', post({ content }), 200_000),
   clearChat: () => request<null>('/api/chat', { method: 'DELETE' }),
+  // Garmin's login can be slow, especially from a server.
+  garminLogin: (email: string, password: string) =>
+    request<{ status: 'connected' | 'needs_code' }>('/api/garmin/login', post({ email, password }), 90_000),
+  garminCode: (code: string) => request<{ status: 'connected' }>('/api/garmin/code', post({ code }), 90_000),
 };
 
 export function describeError(error: unknown): { title: string; message: string } {
@@ -253,6 +287,12 @@ export function describeError(error: unknown): { title: string; message: string 
   }
   switch (error.code) {
     case 'network':
+      if (isOnlineSite) {
+        return {
+          title: 'Il sito non risponde',
+          message: 'Se non lo aprivi da un paio di giorni si sta riaccendendo: riprova tra un minuto.',
+        };
+      }
       return {
         title: 'Server non raggiungibile',
         message:
@@ -265,16 +305,18 @@ export function describeError(error: unknown): { title: string; message: string 
       return { title: 'Garmin non collegato', message: error.message };
     case 'garmin_rate_limited':
       return { title: 'Garmin chiede una pausa', message: error.message };
+    case 'garmin_login_failed':
+    case 'garmin_code_expired':
+      return { title: 'Login Garmin non riuscito', message: error.message };
+    case 'garmin_unavailable':
+      return { title: 'Garmin non raggiungibile', message: error.message };
     case 'sync_in_progress':
       return { title: 'Sincronizzazione già in corso', message: 'Aspetta qualche secondo e riprova.' };
     case 'coach_unavailable':
       return { title: 'Coach AI non disponibile', message: error.message };
   }
   if (error.status === 401) {
-    return {
-      title: 'Accesso negato',
-      message: "Il token dell'app non corrisponde ad API_TOKEN del backend: controlla EXPO_PUBLIC_API_TOKEN.",
-    };
+    return { title: 'Codice di accesso non valido', message: 'Inserisci di nuovo il codice di accesso.' };
   }
   if (error.status === 422) {
     return { title: 'Dati non validi', message: error.message.startsWith('HTTP') ? 'Controlla i valori inseriti.' : error.message };

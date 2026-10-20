@@ -1,6 +1,7 @@
 import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
+import { AccessGate } from '@/components/access-gate';
 import { colors } from '@/constants/theme';
 
 const theme = {
@@ -19,11 +20,14 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={theme}>
       <StatusBar style="light" />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="log" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="workout/[id]" options={{ presentation: 'modal' }} />
-      </Stack>
+      <AccessGate>
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="log" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="workout/[id]" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="garmin" options={{ presentation: 'modal' }} />
+        </Stack>
+      </AccessGate>
     </ThemeProvider>
   );
 }
