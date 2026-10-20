@@ -53,7 +53,9 @@ def stage(web_dir: Path, target: Path) -> None:
     (target / "README.md").write_text(BRANCH_README, encoding="utf-8")
 
 
-def request(method: str, url: str, token: str | None = None, body: Any = None, timeout: float = 60) -> tuple[int, Any]:
+def send(
+    method: str, url: str, token: str | None = None, body: Any = None, timeout: float = 60
+) -> tuple[int, dict[str, str], str]:
     headers = {"Accept": "application/json"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
@@ -65,15 +67,27 @@ def request(method: str, url: str, token: str | None = None, body: Any = None, t
         data = b""
     try:
         with urllib.request.urlopen(urllib.request.Request(url, data, headers, method=method), timeout=timeout) as r:
-            status, text = r.status, r.read().decode("utf-8", "replace")
+            return r.status, dict(r.headers), r.read().decode("utf-8", "replace")
     except urllib.error.HTTPError as exc:
-        status, text = exc.code, exc.read().decode("utf-8", "replace")
+        return exc.code, dict(exc.headers), exc.read().decode("utf-8", "replace")
     except OSError as exc:
-        return 0, str(exc)
+        return 0, {}, str(exc)
+
+
+def request(method: str, url: str, token: str | None = None, body: Any = None, timeout: float = 60) -> tuple[int, Any]:
+    status, _, text = send(method, url, token, body, timeout)
     try:
         return status, json.loads(text)
     except json.JSONDecodeError:
         return status, text
+
+
+def describe(method: str, url: str, token: str | None = None) -> str:
+    """Status, the headers that tell who answered (the app or Render's router) and the start of an error body."""
+    status, headers, text = send(method, url, token)
+    lowered = {k.lower(): v for k, v in headers.items()}
+    shown = {k: lowered[k] for k in ("content-type", "server", "x-render-routing", "x-render-origin-server") if k in lowered}
+    return f"{method} {url} -> {status} {shown} {' '.join(text.split())[:200] if status >= 400 else ''}"
 
 
 class Render:
@@ -86,15 +100,13 @@ class Render:
             sys.exit(f"Render ha risposto {status} a {method} {path.split('?')[0]}: {payload}")
         return payload
 
-    def print_logs(self, owner_id: str, service_id: str) -> None:
-        status, payload = request(
-            "GET",
-            f"{RENDER_API}/logs?ownerId={owner_id}&resource={service_id}&limit=80&direction=backward",
-            self.key,
-        )
+    def print_logs(self, owner_id: str, service_id: str, kind: str = "") -> None:
+        query = f"ownerId={owner_id}&resource={service_id}&limit=100&direction=backward"
+        status, payload = request("GET", f"{RENDER_API}/logs?{query}{f'&type={kind}' if kind else ''}", self.key)
         logs = payload.get("logs", []) if status == 200 and isinstance(payload, dict) else []
-        print("--- ultimi log di Render ---")
-        print("\n".join(entry.get("message", "") for entry in reversed(logs)) or "(log non disponibili)")
+        print(f"--- ultimi log di Render{f' ({kind})' if kind else ''} ---")
+        lines = [entry.get("message", "") for entry in reversed(logs)]
+        print("\n".join(lines) or f"(log non disponibili: {status} {str(payload)[:200]})")
 
 
 def wait_for_deploy(render: Render, owner_id: str, service_id: str, deploy_id: str) -> None:
