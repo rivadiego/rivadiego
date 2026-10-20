@@ -194,9 +194,20 @@ def publish(web_entry: str) -> None:
     url = render("GET", f"/services/{service['id']}")["serviceDetails"]["url"]
     wait_for_site(url, web_entry)
 
-    protected, _ = request("GET", f"{url}/api/status")
-    status, info = request("GET", f"{url}/api/status", code)
+    # Right after a deploy Render can take a moment to route every path to the new instance.
+    deadline = time.monotonic() + 3 * 60
+    while True:
+        protected, _ = request("GET", f"{url}/api/status")
+        status, info = request("GET", f"{url}/api/status", code)
+        if (protected == 401 and status == 200) or time.monotonic() > deadline:
+            break
+        time.sleep(10)
     if protected != 401 or status != 200:
+        print(f"Indirizzo del servizio secondo Render: {url!r}")
+        for method, path, token in (("GET", "", None), ("GET", "/api/status", None), ("GET", "/docs", None)):
+            print(describe(method, f"{url}{path}", token))
+        render.print_logs(owner_id, service["id"], "request")
+        render.print_logs(owner_id, service["id"], "app")
         sys.exit(f"Il sito risponde ma l'API no: senza codice {protected}, con il codice {status}.")
     saved, detail = request("POST", f"{url}/api/backup", code)
     if saved != 200:
