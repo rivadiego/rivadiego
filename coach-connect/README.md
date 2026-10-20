@@ -9,20 +9,22 @@ App personale per il mio allenamento ibrido (palestra + corsa) sui dati Garmin:
 
 ## Online, senza computer acceso (gratis)
 
-Il sito gira su [Hugging Face Spaces](https://huggingface.co/spaces) (piano gratuito) e si apre dall'iPhone con Safari, anche fuori casa. GitHub lo pubblica da solo a ogni modifica del codice (`.github/workflows/coach-connect-online.yml`).
+Il sito gira come servizio web gratuito su [Render](https://render.com) (senza carta di credito) e si apre dall'iPhone con Safari, anche fuori casa; i dati stanno in un dataset privato su [Hugging Face](https://huggingface.co). GitHub pubblica da solo a ogni modifica del codice (`.github/workflows/coach-connect-online.yml`): costruisce il sito, aggiorna il ramo `deploy/coach-connect` da cui Render costruisce il servizio e controlla che tutto funzioni.
 
 1. Crea un account gratuito su [huggingface.co](https://huggingface.co/join), poi un token in **Settings → Access Tokens → Create new token**, di tipo **Write**.
-2. Sul repository GitHub apri **Settings → Secrets and variables → Actions** e aggiungi due *repository secret*:
+2. Crea un account gratuito su [render.com](https://dashboard.render.com/register) (va bene l'accesso con GitHub), poi una chiave in **Account Settings → API Keys → Create API Key**.
+3. Sul repository GitHub apri **Settings → Secrets and variables → Actions** e aggiungi tre *repository secret*:
    - `HF_TOKEN`: il token di Hugging Face;
+   - `RENDER_API_KEY`: la chiave di Render;
    - `COACH_ACCESS_CODE`: un codice di accesso scelto da te, di almeno 8 caratteri (per esempio una frase). Lo chiede l'app.
-3. Avvia la pubblicazione: in **Actions** apri l'ultima esecuzione di **Coach Connect online** e premi **Re-run all jobs** (quando il workflow è su `main` c'è anche **Run workflow**); poi parte da sola a ogni modifica. In 5-10 minuti il log finisce con l'indirizzo, del tipo `https://<utente>-coach-connect.hf.space`.
-4. Sull'iPhone apri l'indirizzo in Safari e inserisci il codice, oppure apri direttamente `https://<utente>-coach-connect.hf.space/#codice=<il tuo codice>`. Poi **Condividi → Aggiungi alla schermata Home**: si apre a tutto schermo, come un'app.
-5. Nell'app tocca **Collega Garmin** (email, password e codice di verifica se attivo): la prima volta scarica tutto lo storico.
+4. Avvia la pubblicazione: in **Actions** apri l'ultima esecuzione di **Coach Connect online** e premi **Re-run all jobs** (quando il workflow è su `main` c'è anche **Run workflow**); poi parte da sola a ogni modifica. In 5-10 minuti il log finisce con l'indirizzo, del tipo `https://coach-connect-xxxx.onrender.com`.
+5. Sull'iPhone apri l'indirizzo in Safari e inserisci il codice, oppure apri direttamente `<indirizzo>/#codice=<il tuo codice>`. Poi **Condividi → Aggiungi alla schermata Home**: si apre a tutto schermo, come un'app.
+6. Nell'app tocca **Collega Garmin** (email, password e codice di verifica se attivo): la prima volta scarica tutto lo storico.
 
-- **Dati**: database e token Garmin stanno in un dataset **privato** su Hugging Face (`<utente>/coach-connect-data`), perché il disco dello Space si azzera a ogni riavvio: l'app li ripristina all'avvio e li salva qualche secondo dopo ogni modifica. Lo Space è pubblico, ma l'API risponde solo con il codice di accesso.
-- **Pausa**: dopo 48 ore senza visite lo Space si ferma; la volta dopo ci mette circa un minuto a ripartire.
+- **Dati**: database e token Garmin stanno in un dataset **privato** su Hugging Face (`<utente>/coach-connect-data`), perché il disco del servizio gratuito si azzera a ogni riavvio: l'app li ripristina all'avvio e li salva qualche secondo dopo ogni modifica. Il sito è pubblico, ma l'API risponde solo con il codice di accesso.
+- **Pausa**: dopo 15 minuti senza visite il servizio gratuito si sospende; la volta dopo ci mette circa un minuto a ripartire.
 - **Coach AI**: senza altro risponde in modalità offline. Per un modello vero aggiungi il secret `LLM_API_KEY` e le *variables* `LLM_BASE_URL` e `LLM_MODEL` di un servizio compatibile OpenAI: in quel caso scheda e parametri vitali vengono inviati a quel servizio.
-- Il token `HF_TOKEN` finisce anche nei secret dello Space, perché l'app possa scrivere nel dataset: trattalo come una password.
+- Il token `HF_TOKEN` finisce anche nelle variabili del servizio su Render, perché l'app possa scrivere nel dataset: trattalo come una password. Hugging Face serve solo per i dati: gli Space che eseguono un server richiedono l'abbonamento PRO.
 
 ## Sul tuo computer
 
@@ -144,7 +146,7 @@ Il repository contiene `.cursor/mcp.json`, che avvia `python -m coach_connect mc
 |------|-------|-------|
 | **Expo Go** | gratis | Per lo sviluppo: l'app gira finché sul computer è acceso `start.py` (Expo e backend). |
 | **TestFlight** | Apple Developer Program, 99 $/anno | App vera con icona, sempre disponibile. La build si fa nel cloud con EAS (`npx eas-cli@latest build -p ios`, poi `submit`): non serve un Mac. Richiede il backend raggiungibile in HTTPS. |
-| **Sito online** | gratis | Su Hugging Face Spaces, pubblicato da GitHub (vedi [Online](#online-senza-computer-acceso-gratis)). Su Safari: Condividi → "Aggiungi alla schermata Home". |
+| **Sito online** | gratis | Su Render, pubblicato da GitHub (vedi [Online](#online-senza-computer-acceso-gratis)). Su Safari: Condividi → "Aggiungi alla schermata Home". |
 
 Widget, HealthKit e notifiche push richiedono la build installata (TestFlight), non Expo Go.
 
@@ -198,7 +200,7 @@ Documentazione interattiva: <http://localhost:8000/docs>.
 ```
 coach-connect/
 ├── start.py · start.cmd    # avvio con un comando (start.cmd per Windows)
-├── deploy/                 # Dockerfile e pubblicazione su Hugging Face Spaces
+├── deploy/                 # Dockerfile e pubblicazione online (Render + dataset Hugging Face)
 ├── backend/
 │   ├── coach_connect/
 │   │   ├── sources.py      # Garmin Connect reale e generatore demo

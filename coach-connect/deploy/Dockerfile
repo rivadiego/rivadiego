@@ -1,4 +1,4 @@
-# Image of the Hugging Face Space: backend + web app, built by deploy/deploy_hf.py.
+# Image of the online service (Render): backend + web app, from the branch prepared by deploy/deploy.py.
 FROM python:3.12-slim
 
 RUN useradd --create-home --uid 1000 user
@@ -16,5 +16,6 @@ COPY --chown=user backend backend
 COPY --chown=user web web
 
 WORKDIR /home/user/app/backend
-EXPOSE 7860
-CMD ["python", "-m", "coach_connect", "serve", "--host", "0.0.0.0", "--port", "7860"]
+EXPOSE 10000
+# exec: the server gets SIGTERM directly and saves pending changes before the instance stops.
+CMD ["sh", "-c", "exec python -m coach_connect serve --host 0.0.0.0 --port ${PORT:-10000}"]
