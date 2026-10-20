@@ -19,7 +19,7 @@ type SportMeta = {
   symbol: SymbolViewProps['name'];
 };
 
-/** Mirrors the categories produced by the backend (garmin_hub/normalize.py). */
+/** Mirrors the categories produced by the backend (coach_connect/normalize.py). */
 const SPORTS: Record<Sport, SportMeta> = {
   run: {
     label: 'Corsa',

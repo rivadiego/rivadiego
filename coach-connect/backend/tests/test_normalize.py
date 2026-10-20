@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from garmin_hub.normalize import normalize_activity, sport_for
+from coach_connect.normalize import normalize_activity, sport_for
 
 
 @pytest.mark.parametrize(

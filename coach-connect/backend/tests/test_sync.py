@@ -3,8 +3,8 @@ import threading
 import pytest
 from helpers import FakeSource, make_raw
 
-from garmin_hub.db import Database
-from garmin_hub.sync import SyncInProgress, Syncer
+from coach_connect.db import Database
+from coach_connect.sync import SyncInProgress, Syncer
 
 
 @pytest.fixture

@@ -1,5 +1,5 @@
 {
-  "name": "garmin-hub",
+  "name": "coach-connect",
   "version": "0.1.0",
   "main": "expo-router/entry",
   "dependencies": {

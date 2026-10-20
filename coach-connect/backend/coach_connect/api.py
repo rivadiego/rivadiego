@@ -93,7 +93,7 @@ def create_app(settings: Settings | None = None, source: ActivitySource | None =
         pause_s=0.5 if source.mode == "live" else 0.0,
     )
 
-    app = FastAPI(title="Garmin Hub API", version=__version__)
+    app = FastAPI(title="Coach Connect API", version=__version__)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(settings.cors_origins),

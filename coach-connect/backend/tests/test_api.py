@@ -1,9 +1,9 @@
 from fastapi.testclient import TestClient
 from helpers import FakeSource, make_raw
 
-from garmin_hub.api import create_app
-from garmin_hub.config import Settings
-from garmin_hub.sources import DemoSource, GarminRateLimited, GarminSource
+from coach_connect.api import create_app
+from coach_connect.config import Settings
+from coach_connect.sources import DemoSource, GarminRateLimited, GarminSource
 
 
 def client_for(tmp_path, source, **settings):
@@ -69,7 +69,7 @@ def test_sync_without_garmin_login_explains_what_to_do(tmp_path):
 
     assert response.status_code == 503
     assert response.json()["code"] == "garmin_not_authenticated"
-    assert "python -m garmin_hub login" in response.json()["detail"]
+    assert "python -m coach_connect login" in response.json()["detail"]
     assert client.get("/api/status").json()["garmin_ready"] is False
 
 

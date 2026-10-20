@@ -1,19 +1,19 @@
 {
   "expo": {
-    "name": "Garmin Hub",
-    "slug": "garmin-hub",
+    "name": "Coach Connect",
+    "slug": "coach-connect",
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "garminhub",
+    "scheme": "coachconnect",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#0A0D12",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.rivadiego.garminhub"
+      "bundleIdentifier": "com.rivadiego.coachconnect"
     },
     "android": {
-      "package": "com.rivadiego.garminhub",
+      "package": "com.rivadiego.coachconnect",
       "adaptiveIcon": {
         "backgroundColor": "#0A0D12",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

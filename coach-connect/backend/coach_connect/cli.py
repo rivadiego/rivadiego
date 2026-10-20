@@ -1,4 +1,4 @@
-"""Command line entry point: python -m garmin_hub <login|sync|status|serve>."""
+"""Command line entry point: python -m coach_connect <login|sync|status|serve>."""
 
 from __future__ import annotations
 
@@ -76,7 +76,7 @@ def cmd_status(settings: Settings) -> int:
     db = Database(settings.db_path)
     print(f"Modalità:         {'demo (dati finti)' if settings.demo else 'Garmin reale'}")
     if not settings.demo:
-        tokens = "presenti" if source.is_ready() else "mancanti, esegui: python -m garmin_hub login"
+        tokens = "presenti" if source.is_ready() else "mancanti, esegui: python -m coach_connect login"
         print(f"Token Garmin:     {tokens} ({settings.token_dir})")
     print(f"Database:         {settings.db_path}")
     print(f"Attività:         {db.count_activities()}")
@@ -88,7 +88,7 @@ def cmd_status(settings: Settings) -> int:
 def cmd_serve(host: str, port: int, reload: bool) -> int:
     import uvicorn
 
-    uvicorn.run("garmin_hub.api:create_app", factory=True, host=host, port=port, reload=reload)
+    uvicorn.run("coach_connect.api:create_app", factory=True, host=host, port=port, reload=reload)
     return 0
 
 
@@ -97,8 +97,8 @@ def main(argv: list[str] | None = None) -> int:
     common.add_argument("--demo", action="store_true", help="usa dati finti, senza account Garmin")
 
     parser = argparse.ArgumentParser(
-        prog="python -m garmin_hub",
-        description="Garmin Hub: sincronizza le tue attività Garmin e le serve all'app.",
+        prog="python -m coach_connect",
+        description="Coach Connect: sincronizza le tue attività Garmin e le serve all'app.",
     )
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("login", help="collega il tuo account Garmin (supporta MFA)")

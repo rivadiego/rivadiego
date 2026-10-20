@@ -54,7 +54,7 @@ class ActivitySource(Protocol):
 
 
 class GarminSource:
-    """Garmin Connect account, authenticated with the tokens saved by `python -m garmin_hub login`."""
+    """Garmin Connect account, authenticated with the tokens saved by `python -m coach_connect login`."""
 
     mode = "live"
 
@@ -75,7 +75,7 @@ class GarminSource:
             self._client = None
             raise GarminNotAuthenticated(
                 "Sessione Garmin non valida o scaduta: esegui di nuovo "
-                "`python -m garmin_hub login` sul computer che fa da server."
+                "`python -m coach_connect login` sul computer che fa da server."
             ) from exc
         except GarminConnectTooManyRequestsError as exc:
             raise GarminRateLimited(
@@ -89,7 +89,7 @@ class GarminSource:
         if self._client is None:
             if not self.is_ready():
                 raise GarminNotAuthenticated(
-                    "Garmin non ancora collegato: esegui `python -m garmin_hub login` "
+                    "Garmin non ancora collegato: esegui `python -m coach_connect login` "
                     "sul computer che fa da server."
                 )
             client = Garmin()

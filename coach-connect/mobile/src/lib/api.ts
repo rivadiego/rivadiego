@@ -125,7 +125,7 @@ export function describeError(error: unknown): { title: string; message: string 
         title: 'Server non raggiungibile',
         message:
           `Non riesco a contattare ${apiBaseUrl()}. Sul computer avvia ` +
-          '"python -m garmin_hub serve" e tieni iPhone e computer sulla stessa rete Wi-Fi.',
+          '"python -m coach_connect serve" e tieni iPhone e computer sulla stessa rete Wi-Fi.',
       };
     case 'timeout':
       return { title: 'Il server non risponde', message: 'La richiesta ci sta mettendo troppo: riprova tra poco.' };

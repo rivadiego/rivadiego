@@ -1,4 +1,4 @@
-# Garmin Hub
+# Coach Connect
 
 App personale sui miei dati Garmin. Per ora: la lista delle attività con un bottone **Aggiorna** che scarica le novità da Garmin Connect. È la base su cui costruire dashboard, piano di allenamento e coach con chat.
 
@@ -26,14 +26,14 @@ Requisiti: Python 3.12+, Node.js 22+, l'app **Expo Go** sull'iPhone (App Store).
 
 ```bash
 # Terminale 1: backend
-cd garmin-app/backend
+cd coach-connect/backend
 python3 -m venv .venv
 source .venv/bin/activate            # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-python -m garmin_hub serve --demo
+python -m coach_connect serve --demo
 
 # Terminale 2: app
-cd garmin-app/mobile
+cd coach-connect/mobile
 npm install
 npx expo start
 ```
@@ -44,15 +44,15 @@ npx expo start
 ## Collega il tuo account Garmin
 
 ```bash
-cd garmin-app/backend
+cd coach-connect/backend
 source .venv/bin/activate
-python -m garmin_hub login     # email, password e codice MFA (se attivo)
-python -m garmin_hub sync      # la prima volta importa tutto lo storico: può richiedere qualche minuto
-python -m garmin_hub serve     # senza --demo
+python -m coach_connect login     # email, password e codice MFA (se attivo)
+python -m coach_connect sync      # la prima volta importa tutto lo storico: può richiedere qualche minuto
+python -m coach_connect serve     # senza --demo
 ```
 
 - La password non viene salvata: in `~/.garminconnect/garmin_tokens.json` finiscono solo i token, che si rinnovano da soli. Se un giorno scadono, l'app mostra "Garmin non collegato": basta rifare `login`.
-- `python -m garmin_hub status` mostra token, numero di attività e ultimo sync.
+- `python -m coach_connect status` mostra token, numero di attività e ultimo sync.
 - È un'API non ufficiale: se Garmin cambia il login (è successo a marzo 2026) può smettere di funzionare finché la libreria non si aggiorna (`pip install -U garminconnect`). I dati già scaricati restano nel database.
 
 ## Usarla sull'iPhone
@@ -102,9 +102,9 @@ Documentazione interattiva: <http://localhost:8000/docs>.
 ## Struttura
 
 ```
-garmin-app/
+coach-connect/
 ├── backend/
-│   ├── garmin_hub/
+│   ├── coach_connect/
 │   │   ├── sources.py     # Garmin Connect reale e generatore demo
 │   │   ├── sync.py        # sync incrementale e recupero dello storico
 │   │   ├── db.py          # SQLite: attività + JSON Garmin completo
@@ -122,8 +122,8 @@ garmin-app/
 ## Test
 
 ```bash
-cd garmin-app/backend && pip install -r requirements-dev.txt && pytest
-cd garmin-app/mobile && npx tsc --noEmit && npx expo lint
+cd coach-connect/backend && pip install -r requirements-dev.txt && pytest
+cd coach-connect/mobile && npx tsc --noEmit && npx expo lint
 ```
 
 ## Privacy
