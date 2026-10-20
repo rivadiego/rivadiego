@@ -9,16 +9,25 @@ App personale per il mio allenamento ibrido (palestra + corsa) sui dati Garmin:
 
 ## Avvio rapido
 
-Servono Python 3.12+ ([python.org](https://www.python.org/downloads/), consigliato 3.13; su Windows anche dal Microsoft Store), Node.js 22+ ([nodejs.org](https://nodejs.org)) e l'app **Expo Go** sull'iPhone. Poi, dalla cartella del repository:
+Servono Python 3.12+ ([python.org](https://www.python.org/downloads/), consigliato 3.13; su Windows anche dal Microsoft Store) e l'app **Expo Go** sull'iPhone. Node.js non serve installarlo: se manca o è troppo vecchio (serve la 22.13, la 24.3 o più recente), lo script ne scarica una copia portatile in `coach-connect/.tools`, senza permessi di amministratore. Poi, dalla cartella del repository:
 
 ```bash
-python3 coach-connect/start.py          # con i tuoi dati Garmin (Windows: python coach-connect\start.py)
+python3 coach-connect/start.py          # con i tuoi dati Garmin
 python3 coach-connect/start.py --demo   # per provare con dati finti
 ```
 
-Su Windows, dopo aver installato Python o Node.js chiudi e riapri PowerShell, e quando Windows Firewall lo chiede consenti l'accesso sulle reti private: serve perché l'iPhone raggiunga il computer.
+Su Windows usa `start.cmd`, che trova Python da solo anche se non è nel PATH: doppio clic sul file, oppure da PowerShell `.\coach-connect\start.cmd --demo`. Quando Windows Firewall lo chiede, consenti l'accesso a Node.js sulle reti private.
 
 Lo script prepara backend e app, la prima volta ti chiede nome, altezza, peso e il login Garmin (con il codice di verifica se attivo), scarica attività e parametri vitali e mostra un QR code: inquadralo con la Fotocamera dell'iPhone e l'app si apre in Expo Go. iPhone e computer devono essere sulla stessa rete Wi-Fi. Ctrl+C chiude tutto; le volte successive basta rilanciare lo stesso comando.
+
+### PC aziendale o rete che blocca l'iPhone
+
+L'iPhone parla solo con il server di Expo (porta 8081), che inoltra le richieste `/api` al backend: il backend resta raggiungibile solo dal computer. Se in Expo Go l'app non si carica, di solito è il firewall (su un PC aziendale non si sblocca senza amministratore) o una Wi-Fi che isola i dispositivi:
+
+- **`--tunnel`**: `.\coach-connect\start.cmd --tunnel` (oppure `python3 coach-connect/start.py --tunnel`). L'app passa da un indirizzo pubblico casuale creato da Expo con ngrok, attivo solo finché lo script è acceso: funziona anche con l'iPhone in 4G. Alcune reti aziendali e VPN bloccano anche i tunnel: in quel caso prova dalla Wi-Fi di casa con la VPN spenta.
+- **Browser**: premi `w` nel terminale di Expo (o apri <http://localhost:8081>) e l'app gira nel browser del computer, senza passare dalla rete.
+- Tieni la cartella fuori da OneDrive, per esempio in `C:\Users\<nome>\coach`: npm installa decine di migliaia di file che OneDrive proverebbe a sincronizzare.
+- Se npm non riesce a scaricare i pacchetti per colpa del proxy aziendale, serve configurarlo (`npm config set proxy …`) o usare un computer personale, che resta la scelta migliore anche per dati di salute e login Garmin.
 
 ## Come funziona
 
@@ -37,10 +46,11 @@ Orologio Garmin → app Garmin Connect (iPhone) → cloud Garmin Connect
 - **Perché SQLite**: l'app legge dal database locale, quindi è veloce e funziona anche se Garmin è giù. Ogni attività e ogni giornata sono salvate anche con il JSON completo di Garmin.
 - **Sync**: la prima volta importa tutto lo storico, poi ogni "Aggiorna" legge solo le novità e i parametri vitali dei giorni non ancora chiusi (di solito 5-6 richieste).
 - **Feed misto**: se registri un allenamento nell'app e l'orologio ha registrato la stessa sessione di forza, compaiono come una sola card con le tue serie più FC, durata e calorie dell'orologio.
+- **Una sola porta**: durante lo sviluppo l'app chiama il server di Expo, che inoltra `/api` al backend (`mobile/metro.config.js`). Così basta che l'iPhone raggiunga la porta 8081, anche attraverso `--tunnel`.
 
 ## Provala subito in modalità demo
 
-Non serve l'account Garmin: dati finti che seguono la settimana della scheda, con allenamenti di palestra che progrediscono secondo le regole RPT.
+Non serve l'account Garmin: dati finti con corse, parametri vitali e allenamenti di palestra che progrediscono secondo le regole RPT. Il modo più semplice è `start.py --demo` (sopra); a mano:
 
 Requisiti: Python 3.12+, Node.js 22+, l'app **Expo Go** sull'iPhone (App Store).
 
@@ -58,7 +68,7 @@ npm install
 npx expo start
 ```
 
-- **iPhone**: inquadra il QR code con la Fotocamera e si apre in Expo Go. iPhone e computer devono stare sulla stessa rete Wi-Fi; quando Expo Go chiede l'accesso alla **rete locale**, consentilo. L'app trova da sola il backend sul computer (porta 8000).
+- **iPhone**: inquadra il QR code con la Fotocamera e si apre in Expo Go. iPhone e computer devono stare sulla stessa rete Wi-Fi; quando Expo Go chiede l'accesso alla **rete locale**, consentilo. L'app raggiunge il backend attraverso il server di Expo.
 - **Browser**: premi `w` nel terminale di Expo.
 
 ## Collega il tuo account Garmin
@@ -115,7 +125,7 @@ Il repository contiene `.cursor/mcp.json`, che avvia `python -m coach_connect mc
 
 | Modo | Costo | Com'è |
 |------|-------|-------|
-| **Expo Go** | gratis | Per lo sviluppo: l'app gira finché sul computer sono accesi `npx expo start` e il backend. |
+| **Expo Go** | gratis | Per lo sviluppo: l'app gira finché sul computer è acceso `start.py` (Expo e backend). |
 | **TestFlight** | Apple Developer Program, 99 $/anno | App vera con icona, sempre disponibile. La build si fa nel cloud con EAS (`npx eas-cli@latest build -p ios`, poi `submit`): non serve un Mac. Richiede il backend raggiungibile in HTTPS. |
 | **Sito web (PWA)** | gratis | `npx expo export -p web` genera `mobile/dist/`, da pubblicare su Netlify, Vercel o Cloudflare Pages. Su Safari: Condividi → "Aggiungi alla schermata Home". |
 
@@ -145,7 +155,7 @@ Poi nell'app imposta `EXPO_PUBLIC_API_URL` (ed `EXPO_PUBLIC_API_TOKEN`) in `mobi
 | `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL` | OpenAI, vuoti | Alternativa a pagamento; se impostata ha la precedenza |
 | `SYNC_PAGE_SIZE` / `SYNC_MAX_PAGES` | `50` / `20` | Attività per richiesta e richieste massime per ogni "Aggiorna" |
 
-`mobile/.env.local` (parti da `mobile/.env.example`): `EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_API_TOKEN`.
+`mobile/.env.local` (parti da `mobile/.env.example`): `EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_API_TOKEN`. Se `EXPO_PUBLIC_API_URL` è vuoto, durante lo sviluppo l'app passa dal server di Expo, che inoltra `/api` a `COACH_BACKEND_URL` (default `http://127.0.0.1:8000`).
 
 ## API
 
@@ -166,6 +176,7 @@ Documentazione interattiva: <http://localhost:8000/docs>.
 
 ```
 coach-connect/
+├── start.py · start.cmd    # avvio con un comando (start.cmd per Windows)
 ├── backend/
 │   ├── coach_connect/
 │   │   ├── sources.py      # Garmin Connect reale e generatore demo
@@ -182,6 +193,7 @@ coach-connect/
 │   │   └── cli.py          # login · sync · status · serve · mcp
 │   └── tests/
 └── mobile/
+    ├── metro.config.js     # in sviluppo inoltra /api al backend
     └── src/
         ├── app/(tabs)/     # Attività · Scheda · Coach
         ├── app/log.tsx     # registra allenamento (+)

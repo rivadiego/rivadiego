@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Avvia Coach Connect con un solo comando: prepara backend e app, collega Garmin e mostra il QR per Expo Go.
 
-    python3 coach-connect/start.py          # con i tuoi dati Garmin (Windows: python coach-connect\\start.py)
-    python3 coach-connect/start.py --demo   # con dati finti
+    python3 coach-connect/start.py            # con i tuoi dati Garmin (Windows: coach-connect\\start.cmd)
+    python3 coach-connect/start.py --demo     # con dati finti
+    python3 coach-connect/start.py --tunnel   # se l'iPhone non raggiunge il computer (rete aziendale, firewall)
 """
 
 from __future__ import annotations
@@ -11,20 +12,26 @@ import argparse
 import hashlib
 import json
 import os
+import platform
 import re
 import shutil
 import subprocess
 import sys
+import tarfile
 import time
 import urllib.request
+import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 BACKEND = ROOT / "backend"
 MOBILE = ROOT / "mobile"
+TOOLS = ROOT / ".tools"
 WINDOWS = os.name == "nt"
 VENV_PYTHON = BACKEND / ".venv" / ("Scripts/python.exe" if WINDOWS else "bin/python")
-STATUS_URL = "http://localhost:8000/api/status"
+# The phone reaches the backend through the Expo server, which forwards /api (mobile/metro.config.js).
+BACKEND_HOST = "127.0.0.1"
+STATUS_URL = f"http://{BACKEND_HOST}:8000/api/status"
 HAS_TOKENS = (
     "from coach_connect.config import Settings; from coach_connect.sources import TOKEN_FILE; "
     "print((Settings.from_env().token_dir / TOKEN_FILE).is_file())"
@@ -68,14 +75,82 @@ def find_python() -> list[str]:
     return []
 
 
-def check_node() -> None:
-    node = shutil.which("node")
-    if node is None or shutil.which("npm") is None:
-        fail("Serve Node.js 22 o più recente: https://nodejs.org (versione LTS). Dopo l'installazione chiudi e riapri "
-             "il terminale.")
-    version = subprocess.run([node, "--version"], capture_output=True, text=True).stdout.strip().lstrip("v")
-    if int(version.split(".")[0]) < 22:
-        fail(f"Hai Node.js {version}: serve la 22 o più recente (https://nodejs.org).")
+def parse_version(text: str) -> tuple[int, ...]:
+    return tuple(int(part) for part in re.findall(r"\d+", text)[:3]) or (0,)
+
+
+def node_version(node: str) -> tuple[int, ...]:
+    try:
+        return parse_version(subprocess.run([node, "--version"], capture_output=True, text=True, timeout=30).stdout)
+    except (OSError, subprocess.TimeoutExpired):
+        return (0,)
+
+
+def node_supported(version: tuple[int, ...]) -> bool:
+    # The "engines" range of expo and react-native (SDK 58): ^22.13.0 || ^24.3.0 || >=26.
+    major, minor = (*version, 0, 0)[:2]
+    return (major == 22 and minor >= 13) or (major == 24 and minor >= 3) or major >= 26
+
+
+def portable_node_bin() -> Path:
+    # The Windows zip has node.exe and npm.cmd at the top level, the macOS and Linux archives under bin/.
+    return TOOLS / "node" if WINDOWS else TOOLS / "node" / "bin"
+
+
+def download_node() -> None:
+    with urllib.request.urlopen("https://nodejs.org/dist/index.json", timeout=30) as response:
+        releases = json.load(response)
+    version = next(r["version"] for r in releases if r["lts"] and node_supported(parse_version(r["version"])))
+    system = "win" if WINDOWS else "darwin" if sys.platform == "darwin" else "linux"
+    arch = "arm64" if platform.machine().lower() in {"arm64", "aarch64"} else "x64"
+    name = f"node-{version}-{system}-{arch}"
+    archive = TOOLS / (name + (".zip" if WINDOWS else ".tar.gz"))
+    say(f"Scarico Node.js {version} portatile in coach-connect/.tools (circa 40 MB, senza installazione né "
+        "permessi di amministratore)…")
+    TOOLS.mkdir(exist_ok=True)
+    urllib.request.urlretrieve(f"https://nodejs.org/dist/{version}/{archive.name}", archive)
+    for old in (TOOLS / name, TOOLS / "node"):
+        shutil.rmtree(old, ignore_errors=True)
+    if WINDOWS:
+        with zipfile.ZipFile(archive) as bundle:
+            bundle.extractall(TOOLS)
+    else:
+        with tarfile.open(archive) as bundle:
+            bundle.extractall(TOOLS, filter="data")
+    (TOOLS / name).rename(TOOLS / "node")
+    archive.unlink()
+
+
+def ensure_node() -> str:
+    """A Node.js supported by Expo: the installed one if it fits, otherwise a portable copy in .tools/."""
+    installed = shutil.which("node")
+    if installed and shutil.which("npm") and node_supported(node_version(installed)):
+        node = installed
+    else:
+        if installed:
+            found = ".".join(map(str, node_version(installed)))
+            say(f"Hai Node.js {found}, ma l'app vuole la 22.13, la 24.3 o una più recente: uso una copia portatile, "
+                "senza toccare quella installata.")
+        node = str(portable_node_bin() / ("node.exe" if WINDOWS else "node"))
+        if not node_supported(node_version(node)):
+            try:
+                download_node()
+            except (OSError, ValueError, StopIteration, zipfile.BadZipFile, tarfile.TarError) as exc:
+                fail(f"Non riesco a scaricare Node.js ({exc}). Scarica a mano la versione LTS in formato .zip da "
+                     f"https://nodejs.org/en/download, estraila e rinomina la cartella in {TOOLS / 'node'}, "
+                     "poi rilancia.")
+        os.environ["PATH"] = f"{portable_node_bin()}{os.pathsep}{os.environ['PATH']}"
+    # Company networks that inspect HTTPS sign it with a certificate trusted by the system but not by Node.
+    env = {**os.environ, "NODE_OPTIONS": f"{os.environ.get('NODE_OPTIONS', '')} --use-system-ca".strip()}
+    if subprocess.run([node, "-e", ""], env=env, capture_output=True).returncode == 0:
+        os.environ["NODE_OPTIONS"] = env["NODE_OPTIONS"]
+    return node
+
+
+def warn_about_onedrive() -> None:
+    if "onedrive" in str(ROOT).lower():
+        say("Attenzione: la cartella è dentro OneDrive, che proverà a sincronizzare le decine di migliaia di file "
+            "installati da npm. Meglio spostarla fuori, per esempio nella tua cartella utente.")
 
 
 def fingerprint(path: Path) -> str:
@@ -179,7 +254,7 @@ def start_backend(demo: bool) -> subprocess.Popen | None:
         return None
     (BACKEND / "data").mkdir(exist_ok=True)
     log = (BACKEND / "data" / "server.log").open("a")
-    cmd = [str(VENV_PYTHON), "-m", "coach_connect", "serve", *(["--demo"] if demo else [])]
+    cmd = [str(VENV_PYTHON), "-m", "coach_connect", "serve", "--host", BACKEND_HOST, *(["--demo"] if demo else [])]
     process = subprocess.Popen(cmd, cwd=BACKEND, stdout=log, stderr=subprocess.STDOUT)
     for _ in range(60):
         if backend_running():
@@ -195,10 +270,14 @@ def start_backend(demo: bool) -> subprocess.Popen | None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Avvia Coach Connect: backend, collegamento Garmin e app.")
     parser.add_argument("--demo", action="store_true", help="usa dati finti, senza account Garmin")
+    parser.add_argument("--tunnel", action="store_true",
+                        help="collega l'iPhone tramite un indirizzo pubblico di Expo, quando rete o firewall "
+                             "bloccano il collegamento diretto")
     args = parser.parse_args()
 
+    warn_about_onedrive()
     python = find_python()
-    check_node()
+    node = ensure_node()
     setup_backend(python)
     setup_profile()
     setup_mobile()
@@ -206,10 +285,19 @@ def main() -> None:
         connect_garmin()
     check_ollama()
     backend = start_backend(args.demo)
-    say("Ora apro l'app. Sull'iPhone: apri la Fotocamera e inquadra il QR (serve Expo Go, stessa rete Wi-Fi "
-        "del computer). Ctrl+C qui per chiudere tutto.")
+    if args.tunnel:
+        say("Ora apro l'app tramite tunnel (ci vuole qualche secondo in più). Sull'iPhone apri la Fotocamera e "
+            "inquadra il QR (serve Expo Go): funziona anche se iPhone e computer sono su reti diverse. "
+            "Ctrl+C qui per chiudere tutto.")
+    else:
+        say("Ora apro l'app. Sull'iPhone apri la Fotocamera e inquadra il QR (serve Expo Go, stessa rete Wi-Fi "
+            "del computer). Se l'app non si carica, rete o firewall bloccano il collegamento: chiudi con Ctrl+C e "
+            "rilancia con --tunnel. Ctrl+C qui per chiudere tutto.")
     try:
-        node_tool(["npx", "expo", "start"], MOBILE)
+        # Straight through node: on Windows npx.cmd would ask "Terminate batch job?" on Ctrl+C.
+        expo = [node, str(MOBILE / "node_modules" / "expo" / "bin" / "cli"), "start"]
+        # The default Expo tunnel needs an Expo account, the ngrok one (@expo/ngrok in package.json) does not.
+        subprocess.run([*expo, *(["--tunnel", "ngrok"] if args.tunnel else [])], cwd=MOBILE)
     except KeyboardInterrupt:
         pass
     finally:

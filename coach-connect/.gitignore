@@ -1,3 +1,6 @@
+# Node.js portatile scaricato da start.py
+.tools/
+
 # Python
 backend/.venv/
 __pycache__/
