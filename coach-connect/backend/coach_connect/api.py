@@ -2,26 +2,31 @@
 
 from __future__ import annotations
 
+import os
 import secrets
+from collections.abc import AsyncIterator, Awaitable, Callable
+from contextlib import asynccontextmanager
 from dataclasses import asdict
 from datetime import date, datetime, timezone
 from typing import Any, Literal
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from pydantic import BaseModel, Field
 
 from . import __version__
+from .backup import cloud_backup
 from .coach import Coach, chat_history, clear_chat
 from .config import Settings
 from .db import Database
 from .exercises import EXERCISES, GROUPS
+from .garmin_auth import GarminLogin
 from .normalize import SPORTS
 from .plan import WORKOUTS
 from .planner import plan_payload
 from .progression import LoggedSet
-from .sources import ActivitySource, SourceError, build_source
+from .sources import ActivitySource, GarminSource, SourceError, brief, build_source
 from .sync import HISTORY_COMPLETE, LAST_SYNC_AT, SyncInProgress, Syncer
 from .wellness import wellness_rows
 from .workouts import create_workout, delete_workout, feed, feed_count, get_workout
@@ -140,6 +145,15 @@ class ChatIn(BaseModel):
     content: str = Field(min_length=1, max_length=4000)
 
 
+class GarminLoginIn(BaseModel):
+    email: str = Field(min_length=3, max_length=200)
+    password: str = Field(min_length=1, max_length=200)
+
+
+class GarminCodeIn(BaseModel):
+    code: str = Field(min_length=4, max_length=12)
+
+
 def _iso(value: str | None, *, utc: bool = False) -> str | None:
     """Garmin's "YYYY-MM-DD HH:MM:SS" -> ISO 8601, with a trailing "Z" for UTC times."""
     if not value:
@@ -175,8 +189,13 @@ def create_app(
     settings: Settings | None = None, source: ActivitySource | None = None, coach: Coach | None = None
 ) -> FastAPI:
     settings = settings or Settings.from_env()
+    if os.getenv("SPACE_ID") and not settings.api_token:
+        raise RuntimeError("Online serve API_TOKEN (il codice di accesso): senza, chiunque vedrebbe i tuoi dati.")
     source = source or build_source(settings)
     coach = coach or Coach(settings)
+    backup = cloud_backup(settings)
+    if backup:
+        backup.restore()
     db = Database(settings.db_path)
     syncer = Syncer(
         source,
@@ -186,7 +205,24 @@ def create_app(
         wellness_days=settings.wellness_days,
     )
 
-    app = FastAPI(title="Coach Connect API", version=__version__)
+    @asynccontextmanager
+    async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+        yield
+        if backup:
+            backup.flush()
+
+    app = FastAPI(title="Coach Connect API", version=__version__, lifespan=lifespan)
+
+    if backup:
+
+        @app.middleware("http")
+        async def save_changes(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+            response = await call_next(request)
+            changed = request.method != "GET" and request.url.path.startswith("/api/")
+            if changed and request.url.path != "/api/backup" and response.status_code < 400:
+                backup.schedule()
+            return response
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(settings.cors_origins),
@@ -210,9 +246,13 @@ def create_app(
         return JSONResponse(status_code=409, content={"code": "sync_in_progress", "detail": str(exc)})
 
     protected = [Depends(require_token)]
+    garmin_login = GarminLogin(settings.token_dir)
+    web_dir = settings.web_dir.resolve() if settings.web_dir else None
 
-    @app.get("/", include_in_schema=False)
-    def root() -> RedirectResponse:
+    @app.get("/", include_in_schema=False, response_model=None)
+    def root() -> Response:
+        if web_dir:
+            return FileResponse(web_dir / "index.html", headers={"Cache-Control": "no-cache"})
         return RedirectResponse("/docs")
 
     @app.get("/api/status", response_model=Status, dependencies=protected)
@@ -321,5 +361,47 @@ def create_app(
     @app.delete("/api/chat", status_code=204, dependencies=protected)
     def reset_chat() -> None:
         clear_chat(db)
+
+    def garmin_connected() -> dict[str, str]:
+        if isinstance(source, GarminSource):
+            source.reload_tokens()
+        return {"status": "connected"}
+
+    @app.post("/api/garmin/login", dependencies=protected)
+    def connect_garmin(body: GarminLoginIn) -> dict[str, str]:
+        """Garmin login from the app; when it answers "needs_code", send the code to /api/garmin/code."""
+        if source.mode != "live":
+            raise HTTPException(status_code=409, detail="Con i dati demo non serve collegare Garmin.")
+        if garmin_login.start(body.email.strip(), body.password) == "needs_code":
+            return {"status": "needs_code"}
+        return garmin_connected()
+
+    @app.post("/api/garmin/code", dependencies=protected)
+    def confirm_garmin_code(body: GarminCodeIn) -> dict[str, str]:
+        garmin_login.finish(body.code.strip())
+        return garmin_connected()
+
+    @app.post("/api/backup", dependencies=protected, response_model=None)
+    def save_backup() -> dict[str, str] | JSONResponse:
+        """Save to the private dataset now (the deploy uses it to check that saving works)."""
+        if backup is None:
+            raise HTTPException(status_code=404, detail="Backup non configurato (HF_TOKEN e HF_DATA_REPO).")
+        try:
+            backup.upload()
+        except Exception as exc:
+            return JSONResponse(status_code=502, content={"code": "backup_failed", "detail": brief(exc)})
+        return {"status": "saved"}
+
+    if web_dir:
+
+        @app.get("/{path:path}", include_in_schema=False)
+        def web_app(path: str) -> FileResponse:
+            if path.startswith("api/"):
+                raise HTTPException(status_code=404, detail="Not Found")
+            file = (web_dir / path).resolve()
+            if file.is_file() and file.is_relative_to(web_dir):
+                return FileResponse(file)
+            # Routes of the single page app, like /scheda or /coach.
+            return FileResponse(web_dir / "index.html", headers={"Cache-Control": "no-cache"})
 
     return app

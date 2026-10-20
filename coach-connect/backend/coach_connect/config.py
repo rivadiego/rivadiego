@@ -51,6 +51,11 @@ class Settings:
     # Local models on a laptop CPU can take a while to answer.
     llm_timeout_s: float = 180.0
     chat_history_messages: int = 20
+    # Online (a Hugging Face Space): the built web app served by the backend, and a private dataset that keeps
+    # the database and the Garmin tokens, because the Space disk is wiped on every restart.
+    web_dir: Path | None = None
+    hf_token: str | None = None
+    hf_data_repo: str | None = None
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -80,4 +85,7 @@ class Settings:
             llm_model=os.getenv("LLM_MODEL") or None,
             llm_timeout_s=float(os.getenv("LLM_TIMEOUT_S") or 180),
             chat_history_messages=int(os.getenv("CHAT_HISTORY_MESSAGES") or 20),
+            web_dir=_path(os.environ["WEB_DIR"]) if os.getenv("WEB_DIR") else None,
+            hf_token=os.getenv("HF_TOKEN") or None,
+            hf_data_repo=os.getenv("HF_DATA_REPO") or None,
         )

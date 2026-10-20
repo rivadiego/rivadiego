@@ -23,6 +23,12 @@ from .db import Database
 TOKEN_FILE = "garmin_tokens.json"
 
 
+def brief(exc: Exception, limit: int = 140) -> str:
+    """The start of a library error, short enough for a phone screen."""
+    text = " ".join(str(exc).split())
+    return text if len(text) <= limit else f"{text[: limit - 1]}…"
+
+
 class SourceError(Exception):
     """An error the API reports to the app with a stable code."""
 
@@ -68,7 +74,7 @@ class ActivitySource(Protocol):
 
 
 class GarminSource:
-    """Garmin Connect account, authenticated with the tokens saved by `python -m coach_connect login`."""
+    """Garmin Connect account, authenticated with the tokens saved at login (from the app or the command line)."""
 
     mode = "live"
 
@@ -78,6 +84,10 @@ class GarminSource:
 
     def is_ready(self) -> bool:
         return (self.token_dir / TOKEN_FILE).is_file()
+
+    def reload_tokens(self) -> None:
+        """Use the tokens of a new login from the next request on."""
+        self._client = None
 
     def begin_sync(self) -> None:
         return None
@@ -128,22 +138,22 @@ class GarminSource:
         except GarminConnectAuthenticationError as exc:
             self._client = None
             raise GarminNotAuthenticated(
-                "Sessione Garmin non valida o scaduta: esegui di nuovo "
-                "`python -m coach_connect login` sul computer che fa da server."
+                "Sessione Garmin non valida o scaduta: collegati di nuovo con «Collega Garmin» "
+                "(o con `python -m coach_connect login` sul computer che fa da server)."
             ) from exc
         except GarminConnectTooManyRequestsError as exc:
             raise GarminRateLimited(
                 "Garmin sta limitando le richieste: riprova tra qualche minuto."
             ) from exc
         except GarminConnectConnectionError as exc:
-            raise GarminUnavailable(f"Garmin Connect non raggiungibile: {exc}") from exc
+            raise GarminUnavailable(f"Garmin Connect non raggiungibile: {brief(exc)}") from exc
 
     def _get_client(self) -> Garmin:
         if self._client is None:
             if not self.is_ready():
                 raise GarminNotAuthenticated(
-                    "Garmin non ancora collegato: esegui `python -m coach_connect login` "
-                    "sul computer che fa da server."
+                    "Garmin non ancora collegato: tocca «Collega Garmin» "
+                    "(o esegui `python -m coach_connect login` sul computer che fa da server)."
                 )
             client = Garmin()
             # Loads the saved tokens; the library refreshes them and writes them back on its own.
