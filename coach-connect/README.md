@@ -4,8 +4,8 @@ App personale per il mio allenamento ibrido (palestra + corsa) sui dati Garmin:
 
 - **Attività**: le corse e le attività registrate da Garmin insieme agli allenamenti di palestra registrati nell'app, con il bottone **Aggiorna**.
 - **+**: registra un allenamento di palestra (esercizi, peso, ripetizioni, serie), già precompilato con i carichi della scheda.
-- **Scheda**: la scheda Hybrid Athlete con la settimana A/B, la fase in corso e i carichi da fare la prossima volta.
-- **Coach**: chat da personal trainer che vede scheda, allenamenti e parametri vitali (sonno, HRV, Body Battery, readiness…) degli ultimi 14 giorni.
+- **Scheda**: la scheda Hybrid Athlete con il prossimo allenamento (Workout A o B) e i carichi da fare la prossima volta.
+- **Coach**: chat da personal trainer che vede scheda, allenamenti e parametri vitali (sonno, HRV, Body Battery, readiness…) degli ultimi 14 giorni. Gratis con Ollama sul tuo computer, oppure dentro Cursor.
 
 ## Come funziona
 
@@ -15,7 +15,7 @@ Orologio Garmin → app Garmin Connect (iPhone) → cloud Garmin Connect
                                                      ▼
        backend/  Python + FastAPI ──► SQLite: attività, parametri vitali, allenamenti registrati, chat
           │  scheda + regole di progressione → carichi suggeriti
-          │  coach → modello AI compatibile OpenAI (opzionale)
+          │  coach → Ollama sul tuo computer (gratis) · server MCP per Cursor
           ▼  API HTTP
        mobile/   Expo ──► iPhone (Expo Go, poi TestFlight) · sito web
 ```
@@ -60,28 +60,43 @@ python -m coach_connect serve  # senza --demo
 ```
 
 - La password non viene salvata: in `~/.garminconnect/garmin_tokens.json` finiscono solo i token, che si rinnovano da soli. Se un giorno scadono, l'app mostra "Garmin non collegato": basta rifare `login`.
+- Non scrivere la password in chat o nel repository. Per un login non interattivo (per esempio un agente Cursor nel cloud), `login` legge `GARMIN_EMAIL` e `GARMIN_PASSWORD` dall'ambiente: in Cursor vanno nei Secrets (Dashboard → Cloud Agents → Secrets).
 - `python -m coach_connect status` mostra token, numero di attività e ultimo sync.
 - È un'API non ufficiale: se Garmin cambia il login (è successo a marzo 2026) può smettere di funzionare finché la libreria non si aggiorna (`pip install -U garminconnect`). I dati già scaricati restano nel database.
 
 ## La scheda e i carichi suggeriti
 
-La scheda è in `backend/coach_connect/plan.py`: rotazione di due settimane (A Push e B Pull a giorni alterni, corsa di qualità il martedì, lungo la domenica), fasi e regole. Il backend calcola i carichi della prossima volta con le regole della scheda:
+La scheda è in `backend/coach_connect/plan.py`: Workout A (Push) e B (Pull) a giorni alterni, con circuito addominali, regole e alimentazione. Non ci sono settimane né date da impostare: il prossimo allenamento è sempre l'opposto dell'ultimo registrato, quindi una sessione saltata non sballa nulla. Il backend calcola i carichi della prossima volta con le regole della scheda:
 
 - **RPT**: la prima serie è la più pesante, poi −10% del carico di punta a ogni serie; quando chiudi tutte le ripetizioni, +1,25 kg (+2 kg sui manubri).
-- **Settimane 1-3 (ripresa)**: stesso carico su tutte le serie. Dalla 13: le varianti (military press, pull-up…).
 - **Complementari**: si sale quando arrivi al massimo del range in tutte le serie.
 - **Chin-up zavorrati**: il 10% si calcola su peso corporeo + zavorra (peso da Garmin o `ATHLETE_WEIGHT_KG`).
 - **Riscaldamento** prima del primo esercizio: 50% × 5, 75% × 3, 90% × 1.
 
-A e B si alternano seguendo gli allenamenti registrati, quindi una sessione saltata non sballa la sequenza. Imposta `PLAN_START_DATE` (il lunedì della settimana 1) per avere la fase giusta.
+## Il coach nell'app (gratis con Ollama)
 
-## Il coach
+Ogni domanda arriva al modello insieme a un riepilogo calcolato dal backend: scheda, prossimo allenamento, ultimi 7 giorni rispetto all'obiettivo (3 palestra + 2 corse), parametri vitali degli ultimi 14 giorni, attività e serie registrate, e i carichi già calcolati con le regole della scheda. Le conversazioni restano salvate nel database; "Nuova chat" ricomincia da zero.
 
-Ogni domanda arriva al modello insieme a un riepilogo calcolato dal backend: scheda, settimana e fase, sessione di oggi, parametri vitali degli ultimi 14 giorni, attività e serie registrate, e i carichi già calcolati con le regole della scheda. Le conversazioni restano salvate nel database; "Nuova chat" ricomincia da zero.
+1. Installa [Ollama](https://ollama.com) sul computer dove gira il backend (Mac, Windows o Linux). Nessun account.
+2. Scarica un modello: `ollama pull qwen3:8b` con 16 GB di RAM, oppure `ollama pull qwen3:4b` con 8 GB.
+3. Fine: il backend trova da solo Ollama e il modello installato, e nella tab Coach compare "Coach AI locale".
 
-- **Senza chiave** il coach è in modalità offline: risponde con regole automatiche (carichi di oggi, recupero, riepilogo della settimana) usando i tuoi dati.
-- **Con un modello AI**: in `backend/.env` imposta `LLM_BASE_URL`, `LLM_API_KEY` e `LLM_MODEL`. Funziona con qualsiasi servizio compatibile con le API OpenAI (OpenAI, Google Gemini, Anthropic, OpenRouter, o Ollama in locale). Si paga a consumo.
-- **Privacy**: con un modello AI collegato, a ogni messaggio i tuoi parametri vitali e allenamenti vengono inviati al provider scelto. Con Ollama restano sul tuo computer.
+- I dati non escono dal tuo computer. Su un portatile senza scheda video la risposta può richiedere 10-60 secondi.
+- Per scegliere un modello preciso imposta `OLLAMA_MODEL` in `backend/.env`.
+- Senza Ollama il coach è in modalità offline: risponde con regole automatiche (carichi, recupero, riepilogo della settimana) usando i tuoi dati.
+- In alternativa, a pagamento: un servizio compatibile con le API OpenAI (`LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`); in quel caso i dati vengono inviati al provider.
+
+## Il coach in Cursor (MCP)
+
+Il repository contiene `.cursor/mcp.json`, che avvia `python -m coach_connect mcp`: un server MCP con i tuoi dati (contesto per il coach, prossimo allenamento con i carichi, parametri vitali, attività, dettaglio allenamenti). Così puoi chiedere a Cursor, per esempio, "che carichi faccio oggi?" o "com'è andata la settimana?", usando il tuo account Cursor senza altre chiavi.
+
+1. Installa il backend come sopra (serve `coach-connect/backend/.venv`).
+2. Apri il repository con Cursor e attiva `coach-connect` in **Cursor Settings → Tools & MCP**.
+3. Chiedi in chat. La regola `.cursor/rules/coach-connect.mdc` fa rispondere l'agente come un personal trainer.
+
+- Su Windows cambia `command` in `.cursor/mcp.json` con `${workspaceFolder}/coach-connect/backend/.venv/Scripts/python.exe`.
+- Per provarlo con i dati demo aggiungi `"--demo"` agli `args`.
+- Funziona in Cursor sul computer dove c'è il database, non negli agenti cloud di cursor.com/agents.
 
 ## Usarla sull'iPhone
 
@@ -112,9 +127,9 @@ Poi nell'app imposta `EXPO_PUBLIC_API_URL` (ed `EXPO_PUBLIC_API_TOKEN`) in `mobi
 | `GARMIN_TOKEN_DIR` | `~/.garminconnect` | Cartella dei token, fuori dal repo |
 | `API_TOKEN` | vuoto | Se impostato, l'app deve mandare `Authorization: Bearer <token>` |
 | `ATHLETE_NAME`, `ATHLETE_HEIGHT_CM`, `ATHLETE_WEIGHT_KG` | vuoti | Profilo per il coach e peso per i chin-up zavorrati |
-| `PLAN_START_DATE` | vuoto | Lunedì della settimana 1 della scheda |
 | `WELLNESS_DAYS` / `WELLNESS_MAX_DAYS_PER_SYNC` | `14` / `6` | Giorni di parametri vitali per il coach e giorni mancanti scaricati per ogni "Aggiorna" |
-| `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL` | OpenAI, vuoti | Modello AI del coach |
+| `OLLAMA_URL`, `OLLAMA_MODEL`, `OLLAMA_NUM_CTX` | `http://localhost:11434`, vuoto, `8192` | Coach gratuito con Ollama (modello vuoto = il primo installato) |
+| `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL` | OpenAI, vuoti | Alternativa a pagamento; se impostata ha la precedenza |
 | `SYNC_PAGE_SIZE` / `SYNC_MAX_PAGES` | `50` / `20` | Attività per richiesta e richieste massime per ogni "Aggiorna" |
 
 `mobile/.env.local` (parti da `mobile/.env.example`): `EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_API_TOKEN`.
@@ -125,7 +140,7 @@ Poi nell'app imposta `EXPO_PUBLIC_API_URL` (ed `EXPO_PUBLIC_API_TOKEN`) in `mobi
 |--------|----------|---------|
 | `POST` | `/api/sync` | Scarica attività e parametri vitali da Garmin |
 | `GET` | `/api/feed` | Attività Garmin e allenamenti registrati, dal più recente |
-| `GET` | `/api/plan` | Scheda, settimana, fase, sessione di oggi e carichi suggeriti per A e B |
+| `GET` | `/api/plan` | Scheda, prossimo allenamento (A o B), ultimo fatto e carichi suggeriti |
 | `GET` | `/api/exercises` | Catalogo esercizi |
 | `POST` / `GET` / `DELETE` | `/api/workouts`, `/api/workouts/{id}` | Registra, leggi, elimina un allenamento |
 | `GET` | `/api/wellness?days=14` | Parametri vitali giornalieri |
@@ -145,12 +160,13 @@ coach-connect/
 │   │   ├── wellness.py     # sonno, HRV, Body Battery, readiness…
 │   │   ├── workouts.py     # allenamenti registrati e feed misto
 │   │   ├── plan.py         # la scheda come dati
-│   │   ├── progression.py  # regole di progressione (RPT, ripresa, complementari)
-│   │   ├── planner.py      # settimana, sessione di oggi, carichi suggeriti
-│   │   ├── coach.py        # chat: contesto, modello AI, risposte offline
+│   │   ├── progression.py  # regole di progressione (RPT, complementari, zavorra)
+│   │   ├── planner.py      # prossimo allenamento e carichi suggeriti
+│   │   ├── coach.py        # chat: contesto, Ollama, risposte offline
+│   │   ├── mcp_server.py   # server MCP per Cursor
 │   │   ├── exercises.py    # catalogo esercizi
 │   │   ├── api.py          # API FastAPI
-│   │   └── cli.py          # login · sync · status · serve
+│   │   └── cli.py          # login · sync · status · serve · mcp
 │   └── tests/
 └── mobile/
     └── src/
@@ -170,4 +186,4 @@ cd coach-connect/mobile && npx tsc --noEmit && npx expo lint
 
 ## Privacy
 
-Questo repository è **pubblico**. `.env`, `backend/data/` e i token sono già esclusi da git: non aggiungerli a mano. Ora che l'app contiene allenamenti e parametri vitali, conviene spostare il progetto in un repository privato. Il PDF del Greek God Program è protetto da copyright e va tenuto solo in locale.
+Questo repository è **pubblico** su GitHub: il codice è visibile a tutti, i tuoi dati no. `.env`, `backend/data/` (database con attività, parametri vitali, allenamenti e chat) e i token sono esclusi da git: non aggiungerli a mano. Con Ollama anche il coach resta sul tuo computer. Il PDF del Greek God Program è protetto da copyright e va tenuto solo in locale.
