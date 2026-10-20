@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import hashlib
 import json
 import os
@@ -26,9 +27,23 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 BACKEND = ROOT / "backend"
 MOBILE = ROOT / "mobile"
-TOOLS = ROOT / ".tools"
 WINDOWS = os.name == "nt"
 VENV_PYTHON = BACKEND / ".venv" / ("Scripts/python.exe" if WINDOWS else "bin/python")
+
+
+def cache_dir() -> Path:
+    # Per-user and outside the project: never synced by OneDrive, kept when the project is downloaded again.
+    if WINDOWS:
+        return Path(os.environ.get("LOCALAPPDATA") or Path.home() / "AppData" / "Local") / "coach-connect"
+    if sys.platform == "darwin":
+        return Path.home() / "Library" / "Caches" / "coach-connect"
+    return Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache") / "coach-connect"
+
+
+NODE_HOME = cache_dir() / "node"
+# The Windows zip has node.exe and npm.cmd at the top level, the macOS and Linux archives under bin/.
+NODE_BIN = NODE_HOME if WINDOWS else NODE_HOME / "bin"
+NPM_CLI = NODE_HOME / ("" if WINDOWS else "lib") / "node_modules" / "npm" / "bin" / "npm-cli.js"
 # The phone reaches the backend through the Expo server, which forwards /api (mobile/metro.config.js).
 BACKEND_HOST = "127.0.0.1"
 STATUS_URL = f"http://{BACKEND_HOST}:8000/api/status"
@@ -92,9 +107,27 @@ def node_supported(version: tuple[int, ...]) -> bool:
     return (major == 22 and minor >= 13) or (major == 24 and minor >= 3) or major >= 26
 
 
-def portable_node_bin() -> Path:
-    # The Windows zip has node.exe and npm.cmd at the top level, the macOS and Linux archives under bin/.
-    return TOOLS / "node" if WINDOWS else TOOLS / "node" / "bin"
+def unpack_without_top_folder(archive: Path, target: Path) -> None:
+    # Straight into place: on Windows, renaming a folder of freshly written files fails while the antivirus
+    # or OneDrive still hold them open.
+    if archive.suffix == ".zip":
+        with zipfile.ZipFile(archive) as bundle:
+            for member in bundle.infolist():
+                relative = member.filename.partition("/")[2]
+                if not relative or member.is_dir():
+                    continue
+                destination = target / relative
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                with bundle.open(member) as source, destination.open("wb") as copy:
+                    shutil.copyfileobj(source, copy)
+        return
+
+    def strip_top_folder(member: tarfile.TarInfo, path: str) -> tarfile.TarInfo | None:
+        relative = member.name.partition("/")[2]
+        return tarfile.data_filter(member.replace(name=relative, deep=False), path) if relative else None
+
+    with tarfile.open(archive) as bundle:
+        bundle.extractall(target, filter=strip_top_folder)
 
 
 def download_node() -> None:
@@ -103,26 +136,20 @@ def download_node() -> None:
     version = next(r["version"] for r in releases if r["lts"] and node_supported(parse_version(r["version"])))
     system = "win" if WINDOWS else "darwin" if sys.platform == "darwin" else "linux"
     arch = "arm64" if platform.machine().lower() in {"arm64", "aarch64"} else "x64"
-    name = f"node-{version}-{system}-{arch}"
-    archive = TOOLS / (name + (".zip" if WINDOWS else ".tar.gz"))
-    say(f"Scarico Node.js {version} portatile in coach-connect/.tools (circa 40 MB, senza installazione né "
-        "permessi di amministratore)…")
-    TOOLS.mkdir(exist_ok=True)
-    urllib.request.urlretrieve(f"https://nodejs.org/dist/{version}/{archive.name}", archive)
-    for old in (TOOLS / name, TOOLS / "node"):
-        shutil.rmtree(old, ignore_errors=True)
-    if WINDOWS:
-        with zipfile.ZipFile(archive) as bundle:
-            bundle.extractall(TOOLS)
-    else:
-        with tarfile.open(archive) as bundle:
-            bundle.extractall(TOOLS, filter="data")
-    (TOOLS / name).rename(TOOLS / "node")
-    archive.unlink()
+    name = f"node-{version}-{system}-{arch}" + (".zip" if WINDOWS else ".tar.gz")
+    say(f"Scarico Node.js {version} portatile in {NODE_HOME} (circa 40 MB, senza installazione né permessi di "
+        "amministratore)…")
+    shutil.rmtree(NODE_HOME, ignore_errors=True)
+    NODE_HOME.mkdir(parents=True, exist_ok=True)
+    archive = NODE_HOME.parent / name
+    urllib.request.urlretrieve(f"https://nodejs.org/dist/{version}/{name}", archive)
+    unpack_without_top_folder(archive, NODE_HOME)
+    with contextlib.suppress(OSError):
+        archive.unlink()
 
 
 def ensure_node() -> str:
-    """A Node.js supported by Expo: the installed one if it fits, otherwise a portable copy in .tools/."""
+    """A Node.js supported by Expo: the installed one if it fits, otherwise a portable copy in the user cache."""
     installed = shutil.which("node")
     if installed and shutil.which("npm") and node_supported(node_version(installed)):
         node = installed
@@ -131,15 +158,15 @@ def ensure_node() -> str:
             found = ".".join(map(str, node_version(installed)))
             say(f"Hai Node.js {found}, ma l'app vuole la 22.13, la 24.3 o una più recente: uso una copia portatile, "
                 "senza toccare quella installata.")
-        node = str(portable_node_bin() / ("node.exe" if WINDOWS else "node"))
-        if not node_supported(node_version(node)):
+        node = str(NODE_BIN / ("node.exe" if WINDOWS else "node"))
+        if not NPM_CLI.exists() or not node_supported(node_version(node)):
             try:
                 download_node()
             except (OSError, ValueError, StopIteration, zipfile.BadZipFile, tarfile.TarError) as exc:
                 fail(f"Non riesco a scaricare Node.js ({exc}). Scarica a mano la versione LTS in formato .zip da "
-                     f"https://nodejs.org/en/download, estraila e rinomina la cartella in {TOOLS / 'node'}, "
+                     f"https://nodejs.org/en/download ed estrai il contenuto della sua cartella in {NODE_HOME}, "
                      "poi rilancia.")
-        os.environ["PATH"] = f"{portable_node_bin()}{os.pathsep}{os.environ['PATH']}"
+        os.environ["PATH"] = f"{NODE_BIN}{os.pathsep}{os.environ['PATH']}"
     # Company networks that inspect HTTPS sign it with a certificate trusted by the system but not by Node.
     env = {**os.environ, "NODE_OPTIONS": f"{os.environ.get('NODE_OPTIONS', '')} --use-system-ca".strip()}
     if subprocess.run([node, "-e", ""], env=env, capture_output=True).returncode == 0:
@@ -147,10 +174,12 @@ def ensure_node() -> str:
     return node
 
 
-def warn_about_onedrive() -> None:
+def check_location() -> None:
     if "onedrive" in str(ROOT).lower():
-        say("Attenzione: la cartella è dentro OneDrive, che proverà a sincronizzare le decine di migliaia di file "
-            "installati da npm. Meglio spostarla fuori, per esempio nella tua cartella utente.")
+        fail(f"La cartella del progetto è dentro OneDrive:\n    {ROOT.parent}\n"
+             "OneDrive blocca le decine di migliaia di file che installano npm e Python, e caricherebbe nel cloud il "
+             "database con i tuoi dati di salute (sul portatile di lavoro, nel OneDrive aziendale).\n"
+             f"Sposta la cartella fuori da OneDrive, per esempio in {Path.home()}, e rilancia da lì.")
 
 
 def fingerprint(path: Path) -> str:
@@ -275,7 +304,7 @@ def main() -> None:
                              "bloccano il collegamento diretto")
     args = parser.parse_args()
 
-    warn_about_onedrive()
+    check_location()
     python = find_python()
     node = ensure_node()
     setup_backend(python)

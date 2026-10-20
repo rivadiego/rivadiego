@@ -9,7 +9,7 @@ App personale per il mio allenamento ibrido (palestra + corsa) sui dati Garmin:
 
 ## Avvio rapido
 
-Servono Python 3.12+ ([python.org](https://www.python.org/downloads/), consigliato 3.13; su Windows anche dal Microsoft Store) e l'app **Expo Go** sull'iPhone. Node.js non serve installarlo: se manca o è troppo vecchio (serve la 22.13, la 24.3 o più recente), lo script ne scarica una copia portatile in `coach-connect/.tools`, senza permessi di amministratore. Poi, dalla cartella del repository:
+Servono Python 3.12+ ([python.org](https://www.python.org/downloads/), consigliato 3.13; su Windows anche dal Microsoft Store) e l'app **Expo Go** sull'iPhone. Node.js non serve installarlo: se manca o è troppo vecchio (serve la 22.13, la 24.3 o più recente), lo script ne scarica una copia portatile nella cache del tuo utente (su Windows `%LOCALAPPDATA%\coach-connect`), senza permessi di amministratore. La cartella del progetto non può stare in OneDrive: sui PC aziendali Desktop e Documenti di solito lo sono, quindi mettila per esempio in `C:\Users\<nome>`. Poi, dalla cartella del repository:
 
 ```bash
 python3 coach-connect/start.py          # con i tuoi dati Garmin
@@ -18,7 +18,7 @@ python3 coach-connect/start.py --demo   # per provare con dati finti
 
 Su Windows usa `start.cmd`, che trova Python da solo anche se non è nel PATH: doppio clic sul file, oppure da PowerShell `.\coach-connect\start.cmd --demo`. Quando Windows Firewall lo chiede, consenti l'accesso a Node.js sulle reti private.
 
-Lo script prepara backend e app, la prima volta ti chiede nome, altezza, peso e il login Garmin (con il codice di verifica se attivo), scarica attività e parametri vitali e mostra un QR code: inquadralo con la Fotocamera dell'iPhone e l'app si apre in Expo Go. iPhone e computer devono essere sulla stessa rete Wi-Fi. Ctrl+C chiude tutto; le volte successive basta rilanciare lo stesso comando.
+Lo script prepara backend e app, la prima volta ti chiede nome, altezza, peso e il login Garmin (con il codice di verifica se attivo), scarica attività e parametri vitali e mostra un QR code: inquadralo con la Fotocamera dell'iPhone e l'app si apre in Expo Go. iPhone e computer devono essere sulla stessa rete Wi-Fi. Ctrl+C chiude tutto; le volte successive basta rilanciare lo stesso comando. Per aggiornare il codice scaricato come ZIP, estrai il nuovo ZIP nello stesso posto e scegli "Sostituisci i file": profilo, dati e dipendenze già installate restano.
 
 ### PC aziendale o rete che blocca l'iPhone
 
@@ -26,7 +26,7 @@ L'iPhone parla solo con il server di Expo (porta 8081), che inoltra le richieste
 
 - **`--tunnel`**: `.\coach-connect\start.cmd --tunnel` (oppure `python3 coach-connect/start.py --tunnel`). L'app passa da un indirizzo pubblico casuale creato da Expo con ngrok, attivo solo finché lo script è acceso: funziona anche con l'iPhone in 4G. Alcune reti aziendali e VPN bloccano anche i tunnel: in quel caso prova dalla Wi-Fi di casa con la VPN spenta.
 - **Browser**: premi `w` nel terminale di Expo (o apri <http://localhost:8081>) e l'app gira nel browser del computer, senza passare dalla rete.
-- Tieni la cartella fuori da OneDrive, per esempio in `C:\Users\<nome>\coach`: npm installa decine di migliaia di file che OneDrive proverebbe a sincronizzare.
+- **OneDrive**: lo script si ferma se la cartella è lì dentro. OneDrive blocca le decine di migliaia di file che installano npm e Python, e caricherebbe nel cloud aziendale il database con i tuoi dati di salute.
 - Se npm non riesce a scaricare i pacchetti per colpa del proxy aziendale, serve configurarlo (`npm config set proxy …`) o usare un computer personale, che resta la scelta migliore anche per dati di salute e login Garmin.
 
 ## Come funziona
