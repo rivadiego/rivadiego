@@ -52,15 +52,15 @@ def bodyweight(db: Database, settings: Settings) -> float | None:
 
 
 def next_gym_workout(db: Database, start: date, today: date) -> str:
-    """A and B alternate session after session, so a missed day doesn't break the sequence."""
+    """The gym workout to do next. A and B alternate session after session, so a missed day
+    doesn't break the sequence."""
     last = last_plan_workout(db)
-    if last is None:
-        day = today
-        while rotation_session(start, day) not in GYM:
-            day += timedelta(days=1)
-        return rotation_session(start, day)
-    which, when = last
-    return which if when[:10] == today.isoformat() else _other(which)
+    if last is not None:
+        return _other(last[0])
+    day = today
+    while rotation_session(start, day) not in GYM:
+        day += timedelta(days=1)
+    return rotation_session(start, day)
 
 
 def _session(key: str) -> dict[str, Any]:
@@ -74,8 +74,7 @@ def _other(which: str) -> str:
 def week_overview(db: Database, start: date, today: date) -> list[dict[str, Any]]:
     monday = monday_of(today)
     done = done_by_day(db, monday, monday + timedelta(days=6))
-    last = last_plan_workout(db)
-    following = _other(last[0]) if last else next_gym_workout(db, start, today)
+    following = next_gym_workout(db, start, today)
     days = []
     for offset in range(7):
         day = monday + timedelta(days=offset)

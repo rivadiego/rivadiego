@@ -20,6 +20,7 @@ class SetTarget:
     weight_kg: float | None
     reps: int | None
     note: str | None = None
+    seconds: int | None = None
 
 
 @dataclass(frozen=True)
@@ -128,7 +129,7 @@ def suggest_free(last: list[LoggedSet]) -> Suggestion:
     """Exercises outside the plan simply repeat the previous session."""
     if not last:
         return Suggestion([SetTarget(None, None)], "Nuovo esercizio.")
-    return Suggestion([SetTarget(s.weight_kg, s.reps) for s in last], "Come l'ultima volta.")
+    return Suggestion([SetTarget(s.weight_kg, s.reps, seconds=s.seconds) for s in last], "Come l'ultima volta.")
 
 
 def warmup_sets(exercise: Exercise, first_set_kg: float | None) -> list[SetTarget]:

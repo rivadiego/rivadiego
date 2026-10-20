@@ -20,8 +20,8 @@ from .workouts import feed, workouts_since
 MONTHS = ("gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre", "ottobre",
           "novembre", "dicembre")
 OFFLINE_NOTE = (
-    "_Coach offline: rispondo con regole automatiche sui tuoi dati. Collega un modello AI nel backend "
-    "(LLM_API_KEY e LLM_MODEL) per parlare liberamente._"
+    "*Coach offline: rispondo con regole automatiche sui tuoi dati. Collega un modello AI nel backend "
+    "per parlare liberamente (vedi README).*"
 )
 
 
@@ -199,8 +199,14 @@ def offline_reply(question: str, snapshot: dict[str, Any]) -> str:
         )
     if any(k in q for k in ("carich", "peso", "kg", "panca", "chin", "rematore", "curl", "oggi", "workout", "palestra")):
         today = plan["today"]
-        which = today["key"] if today["key"] in ("A", "B") else plan["next_gym_workout"]
-        intro = f"Oggi: {today['title']}." if today["key"] not in ("A", "B") else ""
+        gym_today = today["kind"] == "gym" and not today["done"]
+        which = today["key"] if gym_today else plan["next_gym_workout"]
+        if gym_today:
+            intro = ""
+        elif today["kind"] == "gym":
+            intro = f"Oggi hai già fatto il {today['title']}. Ecco i carichi per il prossimo:"
+        else:
+            intro = f"Oggi: {today['title']}. Per la prossima palestra:"
         sections.append((intro + "\n" if intro else "") + loads(which))
     if not sections:
         today = plan["today"]

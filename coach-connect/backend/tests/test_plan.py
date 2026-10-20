@@ -54,12 +54,12 @@ def test_week_thirteen_swaps_in_the_variants():
 
 
 def test_next_gym_workout_follows_the_log_not_the_calendar(db):
+    assert next_gym_workout(db, START, date(2026, 10, 6)) == "B"  # nothing logged: Wednesday's rotation
     # Rotation says Friday 9 is A, but after A on Monday and a skipped Wednesday, B comes next.
     log(db, "A", "2026-10-05")
     assert next_gym_workout(db, START, date(2026, 10, 9)) == "B"
     log(db, "B", "2026-10-09")
-    assert next_gym_workout(db, START, date(2026, 10, 9)) == "B"
-    assert next_gym_workout(db, START, date(2026, 10, 12)) == "A"
+    assert next_gym_workout(db, START, date(2026, 10, 9)) == "A"
 
 
 def test_week_overview_marks_done_and_alternates_upcoming(db):
@@ -94,3 +94,13 @@ def test_plan_payload_includes_templates_with_suggestions(db):
     assert incline["last"] == [{"weight_kg": 50, "reps": 5, "seconds": None}]
     assert incline["suggestion"]["sets"][0]["weight_kg"] == 50
     assert payload["workouts"]["A"]["abs"][3]["measure"] == "seconds"
+
+
+def test_timed_exercises_keep_their_seconds_in_the_suggestion(db):
+    when = datetime.fromisoformat("2026-10-12T07:00:00")
+    create_workout(db, name="A", plan_workout="A", start_local=when, start_utc=when, duration_s=None, notes=None,
+                   exercises=[("plank", [LoggedSet(None, None, 55), LoggedSet(None, None, 50)])])
+
+    plank = plan_payload(db, Settings(plan_start_date=START), date(2026, 10, 13))["workouts"]["A"]["abs"][3]
+
+    assert [s["seconds"] for s in plank["suggestion"]["sets"]] == [55, 50]
