@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "coach-connect": {
+      "type": "stdio",
+      "command": "${workspaceFolder}/coach-connect/backend/.venv/bin/python",
+      "args": ["-m", "coach_connect", "mcp"],
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/coach-connect/backend"
+      }
+    }
+  }
+}

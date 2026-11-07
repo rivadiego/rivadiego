@@ -1,0 +1,98 @@
+name: Coach Connect online
+
+# Tests and builds Coach Connect at every change, then publishes it on Render (free web service) with the data
+# in a private Hugging Face dataset, when the secrets below are set (see coach-connect/README.md).
+on:
+  push:
+    branches: [main, cursor/garmin-app-scaffold-46f9]
+    paths: [coach-connect/**, .github/workflows/coach-connect-online.yml]
+  workflow_dispatch:
+
+concurrency:
+  group: coach-connect-online
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      publish: ${{ steps.secrets.outputs.publish }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Backend tests
+        working-directory: coach-connect/backend
+        run: |
+          pip install -r requirements-dev.txt
+          pytest -q
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: coach-connect/mobile/package-lock.json
+      - name: Build the web app
+        working-directory: coach-connect/mobile
+        run: |
+          npm ci --no-audit --no-fund
+          npx expo export -p web
+      - uses: actions/upload-artifact@v7
+        with:
+          name: web
+          path: coach-connect/mobile/dist
+      - id: secrets
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          COACH_ACCESS_CODE: ${{ secrets.COACH_ACCESS_CODE }}
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          missing=""
+          for name in HF_TOKEN COACH_ACCESS_CODE RENDER_API_KEY; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -z "$missing" ]; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::Pubblicazione saltata, mancano i secret:$missing (coach-connect/README.md)."
+          fi
+
+  publish:
+    needs: build
+    if: needs.build.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: web
+          path: web
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Update the deploy/coach-connect branch
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python coach-connect/deploy/deploy.py --web web --stage site
+          cd site
+          git init -q -b deploy
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "Coach Connect ${GITHUB_SHA::7}"
+          git push -q -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            HEAD:refs/heads/deploy/coach-connect
+      - run: pip install "huggingface_hub>=1.0"
+      - name: Publish on Render
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          COACH_ACCESS_CODE: ${{ secrets.COACH_ACCESS_CODE }}
+          GH_MODELS_TOKEN: ${{ secrets.GH_MODELS_TOKEN }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_BASE_URL: ${{ vars.LLM_BASE_URL }}
+          LLM_MODEL: ${{ vars.LLM_MODEL }}
+        run: python coach-connect/deploy/deploy.py --web web --publish
