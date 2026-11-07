@@ -5,7 +5,9 @@ App personale per il mio allenamento ibrido (palestra + corsa) sui dati Garmin:
 - **Attività**: le corse e le attività registrate da Garmin insieme agli allenamenti di palestra registrati nell'app, con il bottone **Aggiorna**.
 - **+**: registra un allenamento di palestra (esercizi, peso, ripetizioni, serie), già precompilato con i carichi della scheda.
 - **Scheda**: la scheda Hybrid Athlete con il prossimo allenamento (Workout A o B) e i carichi da fare la prossima volta.
-- **Coach**: chat da personal trainer che vede scheda, allenamenti e parametri vitali (sonno, HRV, Body Battery, readiness…) degli ultimi 14 giorni. Gratis con Ollama sul tuo computer, oppure dentro Cursor.
+- **Coach**: chat da personal trainer che vede scheda, allenamenti e parametri vitali (sonno, HRV, Body Battery, readiness…) degli ultimi 14 giorni. Gratis con GitHub Models sul sito online, con Ollama sul tuo computer, oppure dentro Cursor.
+
+Per un agente AI che deve lavorare sul progetto: stato, pubblicazione, vincoli e lavori aperti sono in [`AGENTS.md`](AGENTS.md).
 
 ## Online, senza computer acceso (gratis)
 
